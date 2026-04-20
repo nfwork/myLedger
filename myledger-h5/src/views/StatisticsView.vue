@@ -123,8 +123,10 @@ import {
   formatYearMonthLabel,
   formatYmCompact,
 } from '@/utils/format'
+import { useToast } from '@/composables/useToast'
 
 const WINDOW = 12
+const toast = useToast()
 
 const windowEndYm = ref(currentYearMonth())
 const entryType = ref('expense')
@@ -207,7 +209,8 @@ async function load() {
       },
       fp,
     )
-  } catch {
+  } catch (e) {
+    toast.show(e?.message || '加载失败', 'error')
     flatRows.value = []
   } finally {
     loading.value = false

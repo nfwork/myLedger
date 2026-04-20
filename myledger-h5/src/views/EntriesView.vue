@@ -128,8 +128,10 @@ import {
   accountFilterParams,
 } from '@/composables/accountFilterScope'
 import { currentYearMonth, shiftYearMonth, formatMoney, formatDateDisplay } from '@/utils/format'
+import { useToast } from '@/composables/useToast'
 
 const PAGE_SIZE = 20
+const toast = useToast()
 
 const yearMonth = ref(currentYearMonth())
 const entryType = ref('')
@@ -171,7 +173,8 @@ async function load() {
     const { rows: list, total: n } = await fetchEntryListPage(listQueryBody(0))
     rows.value = list
     total.value = n
-  } catch {
+  } catch (e) {
+    toast.show(e?.message || '加载失败', 'error')
     rows.value = []
     total.value = 0
   } finally {
@@ -186,8 +189,8 @@ async function loadMore() {
     const { rows: list, total: n } = await fetchEntryListPage(listQueryBody(rows.value.length))
     rows.value = rows.value.concat(list)
     total.value = n
-  } catch {
-    /* 保持已加载列表 */
+  } catch (e) {
+    toast.show(e?.message || '加载更多失败', 'error')
   } finally {
     loadingMore.value = false
   }

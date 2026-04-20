@@ -44,21 +44,13 @@ function validateScopeAgainstList() {
 export async function ensureFilterAccounts() {
   if (loaded) return
   readStored()
-  try {
-    accountsForFilter.value = await fetchAccountList()
-  } catch {
-    accountsForFilter.value = []
-  }
+  accountsForFilter.value = await fetchAccountList()
   loaded = true
   validateScopeAgainstList()
 }
 
 export async function refreshFilterAccounts() {
-  try {
-    accountsForFilter.value = await fetchAccountList()
-  } catch {
-    accountsForFilter.value = []
-  }
+  accountsForFilter.value = await fetchAccountList()
   loaded = true
   validateScopeAgainstList()
 }

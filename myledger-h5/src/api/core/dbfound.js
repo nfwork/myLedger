@@ -27,5 +27,8 @@ export async function dbfoundPost(path, body = {}) {
   const { data } = await http.post(path, body, {
     headers: { 'Content-Type': 'application/json' },
   })
+  if (data != null && typeof data === 'object' && 'success' in data) {
+    unwrapDbfound(data)
+  }
   return data
 }

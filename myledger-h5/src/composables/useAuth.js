@@ -29,7 +29,7 @@ export function useAuth() {
   async function doLogin(payload) {
     const res = await apiLogin(payload)
     if (!res?.success) {
-      throw new Error(res?.message || '登录失败')
+      throw new Error(res?.message || '暂时无法登录')
     }
     user.value = res.data
     return res.data

@@ -54,6 +54,7 @@ async function submit() {
     router.replace('/login')
   } catch (e) {
     err.value = e?.message || '注册失败'
+    toast.show(err.value, 'error')
   } finally {
     loading.value = false
   }

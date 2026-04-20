@@ -40,7 +40,8 @@ async function load() {
   loading.value = true
   try {
     rows.value = await fetchCategoryList({ type: tab.value })
-  } catch {
+  } catch (e) {
+    toast.show(e?.message || '加载失败', 'error')
     rows.value = []
   } finally {
     loading.value = false

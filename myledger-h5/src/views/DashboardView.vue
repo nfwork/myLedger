@@ -113,8 +113,10 @@ import {
   formatMoney,
   formatDateDisplay,
 } from '@/utils/format'
+import { useToast } from '@/composables/useToast'
 
 const TOP_CATEGORIES = 8
+const toast = useToast()
 
 const yearMonth = ref(currentYearMonth())
 const loading = ref(true)
@@ -183,7 +185,8 @@ async function load() {
     recent.value = rows
     expenseCats.value = ex
     incomeCats.value = inc
-  } catch {
+  } catch (e) {
+    toast.show(e?.message || '加载失败', 'error')
     totals.value = { income_total: 0, expense_total: 0 }
     recent.value = []
     expenseCats.value = []

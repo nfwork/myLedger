@@ -40,6 +40,34 @@ const password = ref('')
 const loading = ref(false)
 const err = ref('')
 
+/** 将接口/网络错误转成登录页可读、温和的提示 */
+function friendlyLoginMessage(e) {
+  const raw = String(
+    (typeof e?.response?.data === 'string' ? e.response.data : e?.response?.data?.message || e?.response?.data?.detail) ||
+      e?.message ||
+      '',
+  ).trim()
+  const status = e?.response?.status
+  const code = e?.code
+
+  if (code === 'ECONNABORTED' || raw.includes('超时')) {
+    return '等待时间有点长，请稍后再试一次'
+  }
+  if (!e?.response && (code === 'ERR_NETWORK' || raw === 'Network Error')) {
+    return '当前连不上服务器，请检查网络或确认服务已开启'
+  }
+  if (status === 401 || /用户名或密码|账号或密码|未授权|Unauthorized/i.test(raw)) {
+    return '账号或密码不对，请核对后再试；新用户可先注册'
+  }
+  if (status === 400 || /缺少.*username|缺少.*password|username 或 password/i.test(raw)) {
+    return '请填写用户名和密码'
+  }
+  if (raw && raw.length <= 160 && !/^Request failed with status code \d+$/i.test(raw)) {
+    return raw
+  }
+  return '暂时无法登录，请稍后再试'
+}
+
 async function submit() {
   err.value = ''
   loading.value = true
@@ -49,8 +77,7 @@ async function submit() {
     const redir = route.query.redirect
     router.replace(typeof redir === 'string' && redir.startsWith('/') ? redir : '/dashboard')
   } catch (e) {
-    const d = e?.response?.data
-    err.value = (typeof d === 'string' ? d : d?.message || d?.detail) || e?.message || '登录失败'
+    err.value = friendlyLoginMessage(e)
   } finally {
     loading.value = false
   }
