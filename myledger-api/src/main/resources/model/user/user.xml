@@ -34,8 +34,8 @@
         <param name="password" dataType="varchar"/>
         <param name="nickname" dataType="varchar"/>
         <sqls>
-            <collisionSql where="isNull(${@username}) or LENGTH(TRIM(${@username})) &lt; 2"
-                            message="用户名不能为空且至少2个字符"/>
+            <collisionSql where="isNull(${@username}) or LENGTH(TRIM(${@username})) &lt; 4"
+                            message="用户名不能为空且至少4个字符"/>
             <collisionSql where="isNull(${@password}) or LENGTH(${@password}) &lt; 6"
                             message="密码不能为空且至少6位"/>
             <collisionSql where="EXISTS (SELECT 1 FROM ml_user WHERE username = TRIM(${@username}))"

@@ -9,7 +9,7 @@
     <form class="card form-card" @submit.prevent="submit">
       <div class="field">
         <label for="u">用户名</label>
-        <input id="u" v-model.trim="username" autocomplete="username" required minlength="2" placeholder="至少 2 个字符" />
+        <input id="u" v-model.trim="username" autocomplete="username" required minlength="4" placeholder="至少 4 个字符" />
       </div>
       <div class="field">
         <label for="p">密码</label>
@@ -59,7 +59,7 @@ function friendlyLoginMessage(e) {
   if (status === 401 || /用户名或密码|账号或密码|未授权|Unauthorized/i.test(raw)) {
     return '账号或密码不对，请核对后再试；新用户可先注册'
   }
-  if (status === 400 || /缺少.*username|缺少.*password|username 或 password/i.test(raw)) {
+  if (/缺少.*username|缺少.*password|username 或 password/i.test(raw)) {
     return '请填写用户名和密码'
   }
   if (raw && raw.length <= 160 && !/^Request failed with status code \d+$/i.test(raw)) {

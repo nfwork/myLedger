@@ -9,11 +9,15 @@
     <form class="card form-card" @submit.prevent="submit">
       <div class="field">
         <label for="u">用户名</label>
-        <input id="u" v-model.trim="username" autocomplete="username" required minlength="2" />
+        <input id="u" v-model.trim="username" autocomplete="username" required minlength="4" placeholder="至少 4 个字符" />
       </div>
       <div class="field">
         <label for="p">密码</label>
-        <input id="p" v-model="password" type="password" autocomplete="new-password" required minlength="6" />
+        <input id="p" v-model="password" type="password" autocomplete="new-password" required minlength="6" placeholder="至少 6 位" />
+      </div>
+      <div class="field">
+        <label for="p2">确认密码</label>
+        <input id="p2" v-model="passwordConfirm" type="password" autocomplete="new-password" required minlength="6" placeholder="请再次输入密码" />
       </div>
       <div class="field">
         <label for="n">昵称（可选）</label>
@@ -39,12 +43,18 @@ const toast = useToast()
 
 const username = ref('')
 const password = ref('')
+const passwordConfirm = ref('')
 const nickname = ref('')
 const loading = ref(false)
 const err = ref('')
 
 async function submit() {
   err.value = ''
+  if (password.value !== passwordConfirm.value) {
+    err.value = '两次输入的密码不一致'
+    toast.show(err.value, 'error')
+    return
+  }
   loading.value = true
   try {
     const body = { username: username.value, password: password.value }

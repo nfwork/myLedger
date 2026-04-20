@@ -28,9 +28,13 @@ public class AuthService {
         if (body == null || !StringUtils.hasText(body.getUsername()) || !StringUtils.hasText(body.getPassword())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 username 或 password");
         }
+        String username = body.getUsername().trim();
+        if (username.length() < 4) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名至少4个字符");
+        }
 
         Context ctx = new Context()
-                .withParam("username", body.getUsername().trim())
+                .withParam("username", username)
                 .withParam("password", body.getPassword());
         MlUser mlUser = modelExecutor.queryOne(ctx, "user/user", "login", MlUser.class);
         if (mlUser == null || mlUser.getUser_id() == null) {
