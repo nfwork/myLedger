@@ -59,6 +59,7 @@
                 v-for="h in monthHeaders"
                 :key="h.ym"
                 class="col-ym"
+                :class="{ 'is-end-month': h.ym === windowEndYm }"
                 scope="col"
                 :title="formatYearMonthLabel(h.ym)"
               >
@@ -74,7 +75,10 @@
                 v-for="(v, j) in row.amounts"
                 :key="monthKeys[j]"
                 class="num"
-                :class="{ 'is-zero': !v }"
+                :class="{
+                  'is-zero': !v,
+                  'is-end-month': monthKeys[j] === windowEndYm,
+                }"
               >
                 {{ cellMoney(v) }}
               </td>
@@ -84,7 +88,12 @@
           <tfoot v-if="matrix.rows.length">
             <tr class="foot-row">
               <th class="sticky-col foot-lbl" scope="row">月度合计</th>
-              <td v-for="(v, j) in matrix.colTotals" :key="'ft-' + monthKeys[j]" class="num foot-num">
+              <td
+                v-for="(v, j) in matrix.colTotals"
+                :key="'ft-' + monthKeys[j]"
+                class="num foot-num"
+                :class="{ 'is-end-month': monthKeys[j] === windowEndYm }"
+              >
                 {{ cellMoney(v) }}
               </td>
               <td class="num total-col foot-num">{{ cellMoney(matrix.grand) }}</td>
@@ -387,7 +396,7 @@ onMounted(load)
 }
 .matrix th,
 .matrix td {
-  padding: 0.55rem 0.45rem;
+  padding: 0.72rem 0.5rem;
   border-bottom: 1px solid var(--line);
   vertical-align: middle;
 }
@@ -395,13 +404,13 @@ onMounted(load)
   font-weight: 700;
   color: var(--muted);
   white-space: nowrap;
-  background: rgb(248 250 252);
+  background: #f8fafc;
   border-bottom: 1px solid rgb(15 23 42 / 0.08);
 }
 .matrix thead .corner {
   border-top-left-radius: 0;
   vertical-align: bottom;
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.58rem;
 }
 .matrix .col-ym {
   min-width: 3.5rem;
@@ -446,9 +455,38 @@ onMounted(load)
 .matrix .total-col {
   font-weight: 800;
   border-left: 1px solid rgb(13 148 136 / 0.15);
-  background: rgb(13 148 136 / 0.04);
+  background: #f0f9f8;
 }
-
+.matrix thead th.col-ym.is-end-month {
+  background: #d2ebe6;
+}
+.matrix tbody td.num:not(.total-col) {
+  background: #fff;
+}
+.matrix tbody td.total-col {
+  background: #f0f9f8;
+}
+.matrix tbody tr.zebra td.num:not(.total-col) {
+  background: #f1f5f9;
+}
+.matrix tbody td.num.is-end-month:not(.total-col) {
+  background: #daf2ec;
+}
+.matrix tbody tr.zebra td.num.is-end-month:not(.total-col) {
+  background: #cfe9e2;
+}
+.matrix tbody tr:hover td.num:not(.total-col) {
+  background: #ecfdf5;
+}
+.matrix tbody tr:hover td.num.is-end-month:not(.total-col) {
+  background: #c5ebe3;
+}
+.matrix tbody tr.zebra td.total-col {
+  background: #e6f3f0;
+}
+.matrix tbody tr:hover td.total-col {
+  background: #d5ede8;
+}
 .sticky-col {
   position: sticky;
   left: 0;
@@ -461,24 +499,16 @@ onMounted(load)
 }
 .matrix thead .sticky-col {
   z-index: 4;
-  background: rgb(248 250 252);
+  background: #f8fafc;
 }
 .matrix tbody tr.zebra .sticky-col {
-  background: rgb(248 250 252 / 0.85);
+  background: #f1f5f9;
 }
 .matrix tbody tr:not(.zebra) .sticky-col {
   background: var(--surface);
 }
-.matrix tbody tr.zebra td:not(.sticky-col),
-.matrix tbody tr.zebra th[scope='row'] {
-  background: rgb(248 250 252 / 0.45);
-}
 .matrix tbody tr:hover .sticky-col {
-  background: rgb(236 253 245 / 0.95);
-}
-.matrix tbody tr:hover td:not(.total-col),
-.matrix tbody tr:hover th[scope='row'] {
-  background: rgb(236 253 245 / 0.35);
+  background: #ecfdf5;
 }
 
 .cat-name {
@@ -497,13 +527,16 @@ onMounted(load)
 .foot-row th,
 .foot-row td {
   border-top: 2px solid rgb(13 148 136 / 0.2);
-  background: rgb(13 148 136 / 0.08);
-  padding-top: 0.65rem;
-  padding-bottom: 0.65rem;
+  background: #e6f4f2;
+  padding-top: 0.78rem;
+  padding-bottom: 0.78rem;
+}
+.matrix tfoot tr.foot-row td.num.is-end-month:not(.total-col) {
+  background: #cceee6;
 }
 .foot-row .sticky-col {
   z-index: 3;
-  background: rgb(13 148 136 / 0.1);
+  background: #e6f4f2;
   box-shadow: 6px 0 14px -4px rgb(15 23 42 / 0.1);
 }
 .foot-lbl {

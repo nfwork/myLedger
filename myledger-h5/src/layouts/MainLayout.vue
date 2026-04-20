@@ -31,14 +31,20 @@ function goBack() {
 
 <style scoped>
 .main-layout {
+  /* 固定为视口高度，避免整页滚动把顶栏带走；中间 .page-body 单独滚动 */
+  height: 100dvh;
+  max-height: 100dvh;
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: var(--bg);
   color: var(--text);
 }
 .page-head {
   flex-shrink: 0;
+  position: relative;
+  z-index: 40;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -67,8 +73,10 @@ function goBack() {
 }
 .page-body {
   flex: 1;
+  min-height: 0;
   padding: 1rem 1rem 5.5rem;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 .page-body.has-head {
   padding-top: 0.75rem;
