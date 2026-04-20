@@ -1,0 +1,14 @@
+---
+description: myledger-h5 前端 api 层 — 请求路径须写完整 URL，禁止抽离 MODEL 前缀
+alwaysApply: true
+---
+
+# myledger-h5 `src/api` 请求路径约定
+
+目录与 **`myledger-api/src/main/resources/model/`** 对齐：`user/`、`ledger_settings/`（资金账户、分类）、`bookkeeping/`、`report/`；**`auth/`**（登录态 **`/api/auth/*`**）、**`health/`**（**`/api/health`**）按功能命名；**`core/`** 为 `http` 与 dbfound 工具。
+
+在对应模块的 **`*.js`** 里封装请求时：
+
+- **`http` / `dbfoundPost` 使用的路径必须是完整字面量**（含 dbfound 的 `query` / `execute` 全路径，例如 `'/bookkeeping/entry.query!list'`、`'/report/summary.query!monthTotals'`、`'/user/user.execute!register'`），**禁止**将公共前缀抽成 `const MODEL = '...'` 或类似变量再拼接。
+- 目的：打开任一业务 `*.js` 即可与后端 **同名目录 + 同名 xml（无后缀）** 对照。
+- **`core/dbfound.js`** 中 `dbfoundPost(path, body)` 的 `path` 由**调用方**传入完整路径；工具层不承载业务 URL 常量。

@@ -1,0 +1,210 @@
+:root {
+  /* PC：主内容区最大宽度，与 App.vue / TabBar 对齐 */
+  --app-shell-max: 600px;
+  --app-desktop-breakpoint: 720px;
+  --bg: #f4fbfb;
+  --bg-deep: #e6f4f2;
+  --surface: #ffffff;
+  --text: #0f172a;
+  --muted: #64748b;
+  --line: rgb(13 148 136 / 0.12);
+  --primary: #0d9488;
+  --primary-dark: #0f766e;
+  --income: #059669;
+  --expense: #e11d48;
+  --radius: 16px;
+  --shadow: 0 4px 24px rgb(15 23 42 / 0.06);
+  --shadow-lg: 0 12px 40px rgb(15 23 42 / 0.08);
+  font-family: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-tap-highlight-color: transparent;
+}
+
+#app {
+  min-height: 100dvh;
+}
+
+a {
+  color: var(--primary-dark);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.65rem 1.1rem;
+  border-radius: 12px;
+  border: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+}
+.btn:active {
+  transform: scale(0.98);
+}
+.btn-primary {
+  background: linear-gradient(135deg, #14b8a6, #0d9488);
+  color: #fff;
+  box-shadow: 0 6px 20px rgb(13 148 136 / 0.35);
+}
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+.btn-ghost {
+  background: rgb(13 148 136 / 0.1);
+  color: var(--primary-dark);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+.field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.field input,
+.field textarea {
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  text-align: left;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* iOS Safari：原生 date 在 flex/表单里常被压成极窄条，需单独拉满宽度并撑开 WebKit 内层 */
+.field input[type='date'],
+.field input[type='datetime-local'] {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  min-height: 2.85rem;
+  padding: 0.6rem 0.75rem;
+  font-size: 1rem;
+  line-height: 1.4;
+  color: var(--text);
+  text-align: left;
+  direction: ltr;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.field input[type='date']::-webkit-datetime-edit-fields-wrapper,
+.field input[type='datetime-local']::-webkit-datetime-edit-fields-wrapper {
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+}
+
+.field input[type='date']::-webkit-datetime-edit,
+.field input[type='datetime-local']::-webkit-datetime-edit {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  padding: 0.05rem 0;
+  text-align: left;
+}
+
+/* iOS：日期文本默认会居中，强制与 number/文本框一致左对齐 */
+.field input[type='date']::-webkit-date-and-time-value,
+.field input[type='datetime-local']::-webkit-date-and-time-value {
+  text-align: left;
+}
+
+.field input[type='date']::-webkit-calendar-picker-indicator,
+.field input[type='datetime-local']::-webkit-calendar-picker-indicator {
+  margin-left: 0.35rem;
+  padding: 0.35rem;
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+.field select {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 0.65rem 2.35rem 0.65rem 0.75rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background-color: var(--surface);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 0.9rem;
+  font-size: 1rem;
+  line-height: 1.35;
+  color: var(--text);
+  text-align: left;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: rgb(13 148 136 / 0.45);
+  box-shadow: 0 0 0 3px rgb(20 184 166 / 0.15);
+}
+
+.card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border: 1px solid rgb(255 255 255 / 0.8);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.pill-income {
+  background: rgb(5 150 105 / 0.12);
+  color: var(--income);
+}
+.pill-expense {
+  background: rgb(225 29 72 / 0.12);
+  color: var(--expense);
+}

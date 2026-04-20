@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model xmlns="http://dbfound.googlecode.com/model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://dbfound.googlecode.com/model https://raw.githubusercontent.com/nfwork/dbfound/master/tags/model.xsd">
+
+    <param name="user_id" dataType="number" scope="session"/>
+
+    <query name="monthTotals">
+        <param name="year_month" dataType="varchar"/>
+        <sql>
+            SELECT
+                COALESCE(SUM(CASE WHEN e.entry_type = 'income' THEN e.amount END), 0) AS income_total,
+                COALESCE(SUM(CASE WHEN e.entry_type = 'expense' THEN e.amount END), 0) AS expense_total
+            FROM ml_entry e
+            WHERE e.user_id = ${@user_id}
+              AND DATE_FORMAT(e.entry_date, '%Y-%m') = ${@year_month}
+            #AND_CLAUSE#
+        </sql>
+        <filter name="account_id" dataType="number" express="e.account_id = ${@account_id}"/>
+    </query>
+
+    <query name="byCategory">
+        <param name="year_month" dataType="varchar"/>
+        <param name="entry_type" dataType="varchar"/>
+        <sql>
+            SELECT
+                c.id AS category_id,
+                c.name AS category_name,
+                COALESCE(SUM(e.amount), 0) AS total_amount
+            FROM ml_entry e
+            INNER JOIN ml_category c ON c.id = e.category_id
+            WHERE e.user_id = ${@user_id}
+              AND DATE_FORMAT(e.entry_date, '%Y-%m') = ${@year_month}
+              AND e.entry_type = ${@entry_type}
+            #AND_CLAUSE#
+            GROUP BY c.id, c.name
+            ORDER BY total_amount DESC
+        </sql>
+        <filter name="account_id" dataType="number" express="e.account_id = ${@account_id}"/>
+    </query>
+
+    <!-- 二维交叉：自然月 × 分类（指定 entry_type），用于统计页一张表同时对比月与分类 -->
+    <query name="matrixByMonthCategory">
+        <param name="year_month_from" dataType="varchar"/>
+        <param name="year_month_to" dataType="varchar"/>
+        <param name="entry_type" dataType="varchar"/>
+        <sql>
+            SELECT
+                s.bill_month,
+                s.category_id,
+                s.category_name,
+                s.total_amount
+            FROM (
+                SELECT
+                    DATE_FORMAT(e.entry_date, '%Y-%m') AS bill_month,
+                    c.id AS category_id,
+                    c.name AS category_name,
+                    COALESCE(SUM(e.amount), 0) AS total_amount
+                FROM ml_entry e
+                INNER JOIN ml_category c ON c.id = e.category_id
+                WHERE e.user_id = ${@user_id}
+                  AND e.entry_type = ${@entry_type}
+                  AND e.entry_date &gt;= STR_TO_DATE(CONCAT(${@year_month_from}, '-01'), '%Y-%m-%d')
+                  AND e.entry_date &lt; DATE_ADD(STR_TO_DATE(CONCAT(${@year_month_to}, '-01'), '%Y-%m-%d'), INTERVAL 1 MONTH)
+                #AND_CLAUSE#
+                GROUP BY DATE_FORMAT(e.entry_date, '%Y-%m'), c.id, c.name
+            ) s
+            ORDER BY s.bill_month ASC, s.category_name ASC
+        </sql>
+        <filter name="account_id" dataType="number" express="e.account_id = ${@account_id}"/>
+    </query>
+
+    <!-- 指定月份内：按自然日汇总收入 / 支出（仅包含有流水的日期） -->
+    <query name="byDay">
+        <param name="year_month" dataType="varchar"/>
+        <sql>
+            SELECT
+                DATE(e.entry_date) AS day_date,
+                COALESCE(SUM(CASE WHEN e.entry_type = 'income' THEN e.amount END), 0) AS income_amount,
+                COALESCE(SUM(CASE WHEN e.entry_type = 'expense' THEN e.amount END), 0) AS expense_amount
+            FROM ml_entry e
+            WHERE e.user_id = ${@user_id}
+              AND DATE_FORMAT(e.entry_date, '%Y-%m') = ${@year_month}
+            #AND_CLAUSE#
+            GROUP BY DATE(e.entry_date)
+            ORDER BY day_date ASC
+        </sql>
+        <filter name="account_id" dataType="number" express="e.account_id = ${@account_id}"/>
+    </query>
+</model>

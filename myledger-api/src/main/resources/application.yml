@@ -1,0 +1,17 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: myledger-api
+  profiles:
+    active: '@spring.profiles.active@'
+
+dbfound:
+  datasource:
+    db0:
+      url: jdbc:mysql://127.0.0.1:3306/myledger?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      username: dbfound
+      password: dbfound
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      dialect: MySqlDialect

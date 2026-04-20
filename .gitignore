@@ -1,0 +1,17 @@
+# Java
+**/target/
+*.class
+*.jar
+*.war
+*.iml
+
+# Node / Vue
+**/node_modules/
+**/dist/
+**/.vite/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

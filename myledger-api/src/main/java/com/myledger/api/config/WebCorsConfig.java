@@ -1,0 +1,30 @@
+package com.myledger.api.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
+
+@Configuration
+public class WebCorsConfig {
+
+    @Bean
+    public CorsFilter corsFilter() {
+        CorsConfiguration config = new CorsConfiguration();
+        /*
+         * 允许任意来源跨域（含 Cookie / Session 的 withCredentials）。
+         * 使用 {@code allowedOriginPattern("*")}：在 {@code allowCredentials=true} 时，Spring 会将
+         * {@code Access-Control-Allow-Origin} 设为请求中的 {@code Origin}，而不是字面量 {@code *}，符合 CORS 规范。
+         * 生产环境建议改为显式域名白名单或由网关统一做 CORS。
+         */
+        config.addAllowedOriginPattern("*");
+        config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
+        config.setAllowCredentials(true);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", config);
+        return new CorsFilter(source);
+    }
+}

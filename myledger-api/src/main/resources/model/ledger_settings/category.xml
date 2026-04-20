@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model xmlns="http://dbfound.googlecode.com/model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://dbfound.googlecode.com/model https://raw.githubusercontent.com/nfwork/dbfound/master/tags/model.xsd">
+
+    <param name="user_id" dataType="number" scope="session"/>
+
+    <query name="list">
+        <sql>
+            SELECT
+                c.id,
+                c.user_id,
+                c.name,
+                c.type,
+                c.sort_order,
+                c.created_at,
+                c.updated_at
+            FROM ml_category c
+            WHERE c.user_id = ${@user_id}
+            #AND_CLAUSE#
+            ORDER BY c.type ASC, c.sort_order ASC, c.id ASC
+        </sql>
+        <filter name="type" dataType="varchar" express="c.type = ${@type}"/>
+    </query>
+
+    <execute name="add">
+        <param name="name" dataType="varchar"/>
+        <param name="type" dataType="varchar"/>
+        <param name="sort_order" dataType="number"/>
+        <sqls>
+            <collisionSql where="isNull(${@name}) or LENGTH(TRIM(${@name})) &lt; 1" message="分类名称不能为空"/>
+            <collisionSql where="EXISTS (SELECT 1 FROM ml_category WHERE user_id = ${@user_id} AND type = ${@type} AND name = TRIM(${@name}))"
+                            message="同类型下已有该分类名称"/>
+            <executeSql>
+                INSERT INTO ml_category (user_id, name, type, sort_order, created_at, updated_at)
+                VALUES (${@user_id}, TRIM(${@name}), ${@type}, COALESCE(${@sort_order}, 100), NOW(), NOW())
+            </executeSql>
+        </sqls>
+    </execute>
+
+    <execute name="update">
+        <param name="id" dataType="number"/>
+        <param name="name" dataType="varchar"/>
+        <param name="sort_order" dataType="number"/>
+        <sqls>
+            <collisionSql where="NOT EXISTS (SELECT 1 FROM ml_category WHERE id = ${@id} AND user_id = ${@user_id})"
+                            message="分类不存在"/>
+            <collisionSql where="isNull(${@name}) or LENGTH(TRIM(${@name})) &lt; 1" message="分类名称不能为空"/>
+            <collisionSql where="EXISTS (SELECT 1 FROM ml_category c2 WHERE c2.user_id = ${@user_id} AND c2.type = (SELECT type FROM ml_category WHERE id = ${@id}) AND c2.name = TRIM(${@name}) AND c2.id &lt;&gt; ${@id})"
+                            message="同类型下已有该分类名称"/>
+            <executeSql>
+                UPDATE ml_category
+                SET name = TRIM(${@name}),
+                    sort_order = COALESCE(${@sort_order}, sort_order),
+                    updated_at = NOW()
+                WHERE id = ${@id}
+                  AND user_id = ${@user_id}
+            </executeSql>
+        </sqls>
+    </execute>
+
+    <execute name="delete">
+        <param name="id" dataType="number"/>
+        <sqls>
+            <collisionSql where="NOT EXISTS (SELECT 1 FROM ml_category WHERE id = ${@id} AND user_id = ${@user_id})"
+                            message="分类不存在"/>
+            <collisionSql where="EXISTS (SELECT 1 FROM ml_entry WHERE category_id = ${@id})"
+                            message="该分类下已有流水，无法删除"/>
+            <executeSql>
+                DELETE FROM ml_category WHERE id = ${@id} AND user_id = ${@user_id}
+            </executeSql>
+        </sqls>
+    </execute>
+</model>

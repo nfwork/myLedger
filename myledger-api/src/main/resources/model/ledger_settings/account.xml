@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model xmlns="http://dbfound.googlecode.com/model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://dbfound.googlecode.com/model https://raw.githubusercontent.com/nfwork/dbfound/master/tags/model.xsd">
+
+    <param name="user_id" dataType="number" scope="session"/>
+
+    <query name="listByUser">
+        <sql>
+            SELECT
+                a.id,
+                a.user_id,
+                a.name,
+                a.is_default,
+                a.sort_order,
+                a.created_at,
+                a.updated_at
+            FROM ml_account a
+            WHERE a.user_id = ${@user_id}
+            ORDER BY a.is_default DESC, a.sort_order ASC, a.id ASC
+        </sql>
+    </query>
+
+    <query name="getDefault">
+        <sql>
+            SELECT
+                a.id,
+                a.user_id,
+                a.name,
+                a.is_default,
+                a.sort_order,
+                a.created_at,
+                a.updated_at
+            FROM ml_account a
+            WHERE a.user_id = ${@user_id}
+              AND a.is_default = 1
+            LIMIT 1
+        </sql>
+    </query>
+
+    <execute name="add">
+        <param name="name" dataType="varchar"/>
+        <param name="sort_order" dataType="number"/>
+        <sqls>
+            <collisionSql where="isNull(${@name}) or LENGTH(TRIM(${@name})) &lt; 1" message="账户名称不能为空"/>
+            <collisionSql where="EXISTS (SELECT 1 FROM ml_account WHERE user_id = ${@user_id} AND name = TRIM(${@name}))"
+                            message="已有同名资金账户"/>
+            <executeSql>
+                INSERT INTO ml_account (user_id, name, is_default, sort_order, created_at, updated_at)
+                VALUES (${@user_id}, TRIM(${@name}), 0, COALESCE(${@sort_order}, 100), NOW(), NOW())
+            </executeSql>
+        </sqls>
+    </execute>
+
+    <execute name="update">
+        <param name="id" dataType="number"/>
+        <param name="name" dataType="varchar"/>
+        <param name="sort_order" dataType="number"/>
+        <sqls>
+            <collisionSql where="NOT EXISTS (SELECT 1 FROM ml_account WHERE id = ${@id} AND user_id = ${@user_id})"
+                            message="资金账户不存在"/>
+            <collisionSql where="isNull(${@name}) or LENGTH(TRIM(${@name})) &lt; 1" message="账户名称不能为空"/>
+            <collisionSql where="EXISTS (SELECT 1 FROM ml_account a2 WHERE a2.user_id = ${@user_id} AND a2.name = TRIM(${@name}) AND a2.id &lt;&gt; ${@id})"
+                            message="已有同名资金账户"/>
+            <executeSql>
+                UPDATE ml_account
+                SET name = TRIM(${@name}),
+                    sort_order = COALESCE(${@sort_order}, sort_order),
+                    updated_at = NOW()
+                WHERE id = ${@id}
+                  AND user_id = ${@user_id}
+            </executeSql>
+        </sqls>
+    </execute>
+
+    <execute name="setDefault">
+        <param name="id" dataType="number"/>
+        <sqls>
+            <collisionSql where="NOT EXISTS (SELECT 1 FROM ml_account WHERE id = ${@id} AND user_id = ${@user_id})"
+                            message="资金账户不存在"/>
+            <executeSql>
+                UPDATE ml_account
+                SET is_default = 0,
+                    updated_at = NOW()
+                WHERE user_id = ${@user_id}
+            </executeSql>
+            <executeSql>
+                UPDATE ml_account
+                SET is_default = 1,
+                    updated_at = NOW()
+                WHERE id = ${@id}
+                  AND user_id = ${@user_id}
+            </executeSql>
+        </sqls>
+    </execute>
+
+    <execute name="delete">
+        <param name="id" dataType="number"/>
+        <sqls>
+            <collisionSql where="NOT EXISTS (SELECT 1 FROM ml_account WHERE id = ${@id} AND user_id = ${@user_id})"
+                            message="资金账户不存在"/>
+            <collisionSql where="EXISTS (SELECT 1 FROM ml_entry WHERE account_id = ${@id})"
+                            message="该账户下已有流水，无法删除"/>
+            <collisionSql where="EXISTS (SELECT 1 FROM ml_account WHERE id = ${@id} AND user_id = ${@user_id} AND is_default = 1)"
+                            message="默认资金账户不可删除"/>
+            <executeSql>
+                DELETE FROM ml_account WHERE id = ${@id} AND user_id = ${@user_id}
+            </executeSql>
+        </sqls>
+    </execute>
+</model>

@@ -1,0 +1,144 @@
+---
+description: dbfound框架开发规范 - 编写或修改dbfound model XML文件及相关Java代码时自动生效
+globs:
+  - "**/model/**/*.xml"
+  - "**/*Adapter*.java"
+  - "**/*Controller*.java"
+  - "**/*Service*.java"
+alwaysApply: false
+---
+
+# dbfound 框架开发规范
+
+官方文档：https://github.com/nfwork/dbfound/wiki
+
+**重要：不确定的 API 或用法必须参考官方文档，禁止猜测或编造 dbfound 语法。**
+
+## Model XML 文件结构
+
+model 文件放在 `resources/model/` 目录下，文件路径即为 model_name（如 `model/user/user.xml` 对应 `user/user`）。**本仓库**业务 model 按**模块**分目录：`model/user/user.xml`（`user/user`）；`model/ledger_settings/account.xml`、`category.xml`（资金账户与分类）；`model/bookkeeping/entry.xml`（流水）；`model/report/summary.xml`（报表统计，`report/summary`）。
+
+根标签为 `<model>`，命名空间固定：
+```xml
+<model xmlns="http://dbfound.googlecode.com/model"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://dbfound.googlecode.com/model https://raw.githubusercontent.com/nfwork/dbfound/master/tags/model.xsd">
+```
+
+子标签仅有三种：`<param>`、`<query>`、`<execute>`。
+
+- 子标签`<param>`应集中定义在最前面
+
+## 参数取值语法
+
+- `${@paramName}`：动态设值（PreparedStatement 参数绑定，防 SQL 注入）
+- `#{@paramName}`：静态设值（直接拼入 SQL 文本，用于字段名、排序等非值场景）
+
+**禁止在值传递场景使用 `#{}`，会导致 SQL 注入风险。**
+
+## param 标签
+
+- `name`：必填
+- `dataType`：varchar / number / date / boolean / collection / file
+- `sourcePath`：EL 表达式取值路径，如 `request.user.userId`、`roles.size`
+- `scope`：session / request / param / outParam / cookie / header
+- `ioType`：in / out / both
+
+## query 标签
+
+- `name`：唯一标识，每个 model 最多一个匿名 query 作为默认查询
+- HTTP 调用：`/modelName.query` 或 `/modelName.query!queryName`
+
+子标签：`<param>`、`<sql>`、`<filter>`、`<verifier>`
+
+- 子标签应严格遵循先后顺序，提升代码可读性
+
+## filter 标签
+
+- 动态条件，通过 `#WHERE_CLAUSE#` 或 `#AND_CLAUSE#` 挂载
+- SQL 已有 WHERE 时用 `#AND_CLAUSE#`，无 WHERE 时用 `#WHERE_CLAUSE#`
+- 生效规则：无 condition 时同名参数非空即生效；有 condition 按表达式判断；`active="true"` 始终生效
+
+```xml
+<filter name="username" dataType="varchar" express="username like concat('%', ${@username}, '%')" />
+<filter name="enabled" active="true" dataType="varchar" express="enabled = 1" />
+<filter name="is_admin" condition="${@login_user_admin} = false" express="team_id = ${@team_id}" />
+```
+
+## verifier 标签（query 专用）
+
+条件命中时抛出 VerifyException：
+```xml
+<verifier express="${@hour} is not null and ${@hour} not between 0 and 23" message="小时数必须在0-23之间"/>
+```
+
+## execute 标签
+
+- `name`：必填
+- HTTP 调用：`/modelName.execute!executeName`
+
+子标签：`<param>`、`<sqls>`
+
+## sqls 内可用子标签
+
+| 标签 | 用途 |
+|---|---|
+| `executeSql` | 执行 DML，支持 `generatedKeyParam` 返回自增主键 |
+| `collisionSql` | 校验，`where` 条件命中时抛异常（execute 专用，替代 verifier） |
+| `querySql` | 在 execute 流程中查询参数 |
+| `batchExecuteSql` | 批量执行，用 `#BATCH_TEMPLATE_BEGIN#` / `#BATCH_TEMPLATE_END#` 包裹模板 |
+| `batchSql` | 逐行遍历执行，支持 `sourcePath` 或 `cursor` |
+| `whenSql` / `otherwiseSql` / `caseSql` | 条件分支 |
+| `query` / `execute` | 调用其他 model 的 query 或 execute |
+
+## sqlPart 标签
+
+- `type="if"`：条件判断，通过 `condition` 或 `sourcePath` 控制
+- `type="for"`：循环，属性包括 `sourcePath`、`separator`、`begin`、`end`、`item`、`index`
+- `type="elseif"` / `type="else"`：3.6.0+ 支持
+- `autoClearComma="true"`：自动清除结尾多余逗号
+
+```xml
+<sqlPart type="if" condition="${@sort} is not null">
+    order by #{@sort}
+</sqlPart>
+```
+
+## Java API（Spring Boot 项目）
+
+使用 `ModelExecutor`（由 Spring 容器管理）：
+```java
+// 查询
+List<UserDto> users = modelExecutor.queryList(context, "sys/user", "getByUsername", UserDto.class);
+UserDto user = modelExecutor.queryOne(context, "sys/user", "getById", UserDto.class);
+QueryResponseObject<Map<String, Object>> result = modelExecutor.query(context, "sys/user", "");
+
+// 执行
+ResponseObject res = modelExecutor.execute(context, "sys/user", "add");
+ResponseObject res = modelExecutor.batchExecute(context, "sys/user", "add", "param.GridData");
+
+// Context 构建（3.6.2+）
+Context context = new Context()
+    .withParam("user_id", userId)
+    .withBeanParam(userBean)
+    .withMapParam(paramMap);
+```
+
+## Spring `ModelExecutor` 与强类型查询结果
+
+- `queryList(context, modelName, queryName, Class<T>)`、`queryOne(context, modelName, queryName, Class<T>)` 以及带 `Class<T>` 的 `query(...)` 可将结果行映射为 **JavaBean**（公开无参构造 + 与结果列对应的 setter；也可用实体字段上的 `@Column` 绑定列别名）。
+- 本仓库不声明 **`underscore-to-camel-case`**（dbfound 默认为 **false**），查询 JSON 与 SQL 列别名一致为 **snake_case**。强类型实体若需绑定 `user_id` 等列，JavaBean 使用与列名一致的属性（如 `getUser_id` / `setUser_id`），见 **`MlUser`**。若在配置中设为 `true`，则可用 `userId` + `setUserId` 与列 `user_id` 自动映射。
+
+## 集合参数
+
+- `in` 场景：`user_id in (${@ids})`
+- 判空：衍生 size 参数 `<param name="ids_size" sourcePath="ids.size" dataType="number" />`
+- 逗号分隔字符串自动转集合：声明 `dataType="collection"`
+
+## 常见错误提醒
+
+1. **禁止**在 filter 的 express 中使用 MyBatis 语法（如 `#{param}` `${param}`），dbfound 的语法是 `${@param}` 和 `#{@param}`（带 `@` 符号）
+2. **禁止**在 query 中使用 `collisionSql`，它只能在 execute 的 sqls 中使用；query 用 `verifier`。**禁止**在 execute 的 `sqls` 中使用 `verifier`（官方：`verifier` 为 query 独有）；execute 内参数校验用 **`collisionSql`**（`where` 为真时抛错，见 [dbfound-model-api](https://github.com/nfwork/dbfound/wiki/dbfound-model-api)）
+3. **禁止**编造不存在的标签或属性，如有不确定的用法请查阅 https://github.com/nfwork/dbfound/wiki/dbfound-model-api
+4. `#WHERE_CLAUSE#` 和 `#AND_CLAUSE#` 是固定占位符，不要修改拼写
+5. `sqlPart` 的 `elseif` 和 `else` 类型需要 dbfound 3.6.0+

@@ -1,0 +1,25 @@
+{
+  "name": "myledger-h5",
+  "private": true,
+  "version": "0.0.1",
+  "engines": {
+    "node": ">=12.9.0"
+  },
+  "scripts": {
+    "esbuild:cache": "npm install esbuild-windows-64@0.14.54 --no-save --ignore-scripts --prefix scripts/.esbuild-cache",
+    "dev": "node scripts/check-node.cjs && node scripts/run-vite.cjs",
+    "serve": "node scripts/check-node.cjs && node scripts/run-vite.cjs",
+    "build": "node scripts/check-node.cjs && node scripts/run-vite.cjs build",
+    "preview": "node scripts/check-node.cjs && node scripts/run-vite.cjs preview"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "vue": "3.2.47",
+    "vue-router": "4.4.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "2.3.4",
+    "@vue/compiler-sfc": "3.2.47",
+    "vite": "2.9.18"
+  }
+}

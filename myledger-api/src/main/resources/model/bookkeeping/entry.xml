@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model xmlns="http://dbfound.googlecode.com/model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://dbfound.googlecode.com/model https://raw.githubusercontent.com/nfwork/dbfound/master/tags/model.xsd">
+
+    <param name="user_id" dataType="number" scope="session"/>
+
+    <query name="list" pagerSize="20">
+        <sql>
+            SELECT
+                e.id,
+                e.user_id,
+                e.account_id,
+                a.name AS account_name,
+                e.category_id,
+                c.name AS category_name,
+                e.entry_type,
+                e.amount,
+                e.entry_date,
+                e.remark,
+                e.created_at,
+                e.updated_at
+            FROM ml_entry e
+            INNER JOIN ml_category c ON c.id = e.category_id
+            INNER JOIN ml_account a ON a.id = e.account_id
+            WHERE e.user_id = ${@user_id}
+            #AND_CLAUSE#
+            ORDER BY e.entry_date DESC, e.id DESC
+        </sql>
+        <filter name="account_id" dataType="number" express="e.account_id = ${@account_id}"/>
+        <filter name="category_id" dataType="number" express="e.category_id = ${@category_id}"/>
+        <filter name="entry_type" dataType="varchar" express="e.entry_type = ${@entry_type}"/>
+        <filter name="year_month" dataType="varchar" express="DATE_FORMAT(e.entry_date, '%Y-%m') = ${@year_month}"/>
+        <filter name="entry_date_from" dataType="date" express="e.entry_date &gt;= ${@entry_date_from}"/>
+        <filter name="entry_date_to" dataType="date" express="e.entry_date &lt;= ${@entry_date_to}"/>
+        <filter name="remark_keyword" dataType="varchar" express="e.remark LIKE CONCAT('%', TRIM(${@remark_keyword}), '%')"/>
+    </query>
+
+    <query name="getById">
+        <param name="id" dataType="number"/>
+        <sql>
+            SELECT
+                e.id,
+                e.user_id,
+                e.account_id,
+                a.name AS account_name,
+                e.category_id,
+                c.name AS category_name,
+                e.entry_type,
+                e.amount,
+                e.entry_date,
+                e.remark,
+                e.created_at,
+                e.updated_at
+            FROM ml_entry e
+            INNER JOIN ml_category c ON c.id = e.category_id
+            INNER JOIN ml_account a ON a.id = e.account_id
+            WHERE e.id = ${@id}
+              AND e.user_id = ${@user_id}
+        </sql>
+    </query>
+
+    <execute name="add">
+        <param name="account_id" dataType="number"/>
+        <param name="category_id" dataType="number"/>
+        <param name="entry_type" dataType="varchar"/>
+        <param name="amount" dataType="number"/>
+        <param name="entry_date" dataType="date"/>
+        <param name="remark" dataType="varchar"/>
+        <sqls>
+            <collisionSql where="isNull(${@amount}) or ${@amount} &lt;= 0" message="金额必须大于0"/>
+            <collisionSql where="isNull(${@remark}) or LENGTH(TRIM(IFNULL(${@remark}, ''))) &lt; 1" message="备注不能为空"/>
+            <collisionSql where="NOT EXISTS (SELECT 1 FROM ml_account WHERE id = ${@account_id} AND user_id = ${@user_id})"
+                            message="资金账户不存在"/>
+            <collisionSql where="NOT EXISTS (SELECT 1 FROM ml_category WHERE id = ${@category_id} AND user_id = ${@user_id} AND type = ${@entry_type})"
+                            message="分类不存在或与收支类型不匹配"/>
+            <executeSql>
+                INSERT INTO ml_entry (user_id, account_id, category_id, entry_type, amount, entry_date, remark, created_at, updated_at)
+                VALUES (${@user_id}, ${@account_id}, ${@category_id}, ${@entry_type}, ${@amount}, ${@entry_date}, TRIM(${@remark}), NOW(), NOW())
+            </executeSql>
+        </sqls>
+    </execute>
+
+    <execute name="update">
+        <param name="id" dataType="number"/>
+        <param name="account_id" dataType="number"/>
+        <param name="category_id" dataType="number"/>
+        <param name="entry_type" dataType="varchar"/>
+        <param name="amount" dataType="number"/>
+        <param name="entry_date" dataType="date"/>
+        <param name="remark" dataType="varchar"/>
+        <sqls>
+            <collisionSql where="isNull(${@amount}) or ${@amount} &lt;= 0" message="金额必须大于0"/>
+            <collisionSql where="isNull(${@remark}) or LENGTH(TRIM(IFNULL(${@remark}, ''))) &lt; 1" message="备注不能为空"/>
+            <collisionSql where="NOT EXISTS (SELECT 1 FROM ml_entry WHERE id = ${@id} AND user_id = ${@user_id})"
+                            message="流水不存在"/>
+            <collisionSql where="NOT EXISTS (SELECT 1 FROM ml_account WHERE id = ${@account_id} AND user_id = ${@user_id})"
+                            message="资金账户不存在"/>
+            <collisionSql where="NOT EXISTS (SELECT 1 FROM ml_category WHERE id = ${@category_id} AND user_id = ${@user_id} AND type = ${@entry_type})"
+                            message="分类不存在或与收支类型不匹配"/>
+            <executeSql>
+                UPDATE ml_entry
+                SET account_id = ${@account_id},
+                    category_id = ${@category_id},
+                    entry_type = ${@entry_type},
+                    amount = ${@amount},
+                    entry_date = ${@entry_date},
+                    remark = TRIM(${@remark}),
+                    updated_at = NOW()
+                WHERE id = ${@id}
+                  AND user_id = ${@user_id}
+            </executeSql>
+        </sqls>
+    </execute>
+
+    <execute name="delete">
+        <param name="id" dataType="number"/>
+        <sqls>
+            <collisionSql where="NOT EXISTS (SELECT 1 FROM ml_entry WHERE id = ${@id} AND user_id = ${@user_id})"
+                            message="流水不存在"/>
+            <executeSql>
+                DELETE FROM ml_entry WHERE id = ${@id} AND user_id = ${@user_id}
+            </executeSql>
+        </sqls>
+    </execute>
+</model>
