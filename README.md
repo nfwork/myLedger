@@ -14,7 +14,7 @@
 ## 技术栈（摘要）
 
 - **后端**：Java 17、Spring Boot、dbfound、MySQL。
-- **前端**：Vue 3、Vue Router、Axios；**Node** 版本以 **`myledger-h5/package.json`** / **`.nvmrc`** 为准（**Vite 2** 与低版本 Node 的约束见该目录说明）。
+- **前端**：Vue 3、Vue Router、Axios；**Node** 版本以 **`myledger-h5/package.json`** 的 **`engines`** 为准（**Vite 2** 与低版本 Node 的约束见该目录说明）。
 
 ## 本地运行
 
@@ -41,7 +41,7 @@ npm install
 npm run dev
 ```
 
-默认 **http://127.0.0.1:5173**；**`vite.config.cjs`** 已 **`server.host: true`**，局域网可访问。开发期 **`VITE_API_BASE` 留空** 走代理，避免跨域。生产在 **`myledger-h5/.env.production`** 配置 **`VITE_API_BASE`**。
+默认 **http://127.0.0.1:5173**；**`vite.config.js`** 已 **`server.host: true`**，局域网可访问。开发期 **`VITE_API_BASE` 留空** 走代理，避免跨域。生产在 **`myledger-h5/.env.production`** 配置 **`VITE_API_BASE`**。
 
 若 **`npm install` 报 engines**：将 Node 升到 `package.json` 要求后再试。Windows 下 **esbuild** 异常可先结束 **node** 进程后删 **`node_modules`** 重装，或使用项目内的 **`npm run esbuild:cache`**（见 `package.json` 脚本说明）。
 
