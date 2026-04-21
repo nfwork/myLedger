@@ -5,13 +5,13 @@ package com.myledger.api.model.entity;
  */
 public class RefreshTokenUserIdRow {
 
-    private Long user_id;
+    private Long userId;
 
-    public Long getUser_id() {
-        return user_id;
+    public Long getUserId() {
+        return userId;
     }
 
-    public void setUser_id(Long user_id) {
-        this.user_id = user_id;
+    public void setUserId(Long userId) {
+        this.userId = userId;
     }
 }

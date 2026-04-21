@@ -38,7 +38,7 @@ public class AuthService {
      */
     public AuthTokenBundleDto login(LoginRequest body) {
         MlUser mlUser = authenticateCredentials(body);
-        refreshTokenService.deleteAllForUser(mlUser.getUser_id());
+        refreshTokenService.deleteAllForUser(mlUser.getUserId());
         return issueTokenBundle(mlUser);
     }
 
@@ -51,7 +51,7 @@ public class AuthService {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "刷新令牌无效或已过期");
         }
         MlUser user = findUserByIdForAuth(userId);
-        if (user == null || user.getUser_id() == null) {
+        if (user == null || user.getUserId() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户不存在");
         }
         return issueTokenBundle(user);
@@ -83,7 +83,7 @@ public class AuthService {
                 .withParam("username", username)
                 .withParam("password", body.getPassword());
         MlUser mlUser = modelExecutor.queryOne(ctx, "user/user", "login", MlUser.class);
-        if (mlUser == null || mlUser.getUser_id() == null) {
+        if (mlUser == null || mlUser.getUserId() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户名或密码错误");
         }
         return mlUser;
@@ -94,10 +94,10 @@ public class AuthService {
     }
 
     private AuthTokenBundleDto issueTokenBundle(MlUser user) {
-        String access = jwtService.issueAccessToken(user.getUser_id(), user.getUsername(), user.getNickname());
+        String access = jwtService.issueAccessToken(user.getUserId(), user.getUsername(), user.getNickname());
         String refreshRaw = newRefreshTokenRaw();
         Instant exp = Instant.now().plusSeconds(jwtService.getRefreshTokenTtlSeconds());
-        refreshTokenService.insert(user.getUser_id(), JwtService.sha256Hex(refreshRaw), exp.getEpochSecond());
+        refreshTokenService.insert(user.getUserId(), JwtService.sha256Hex(refreshRaw), exp.getEpochSecond());
         return new AuthTokenBundleDto(user, access, refreshRaw, jwtService.getAccessTokenTtlSeconds());
     }
 

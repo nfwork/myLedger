@@ -1,0 +1,33 @@
+---
+description: myLedger 后端 — dbfound 工程约定（路径、命名、与框架规则叠加）
+globs:
+  - "**/model/**/*.xml"
+  - "**/*Adapter*.java"
+  - "**/*Controller*.java"
+  - "**/*Service*.java"
+alwaysApply: false
+---
+
+# myLedger 与 dbfound 相关的工程约定
+
+与 **`.cursor/rules/dbfound-framework.mdc`**（纯框架语法）配合使用；本文件只写本仓库路径、模块划分与列名/JavaBean 习惯。
+
+## Model 目录与 `model_name`
+
+业务 model 位于 **`myledger-api/src/main/resources/model/`**，按模块分子目录，路径即 **`model_name`**（无 `.xml` 后缀）：
+
+| 路径示例 | `model_name` | 说明 |
+|---|---|---|
+| `model/user/user.xml` | `user/user` | 用户 |
+| `model/ledger_settings/account.xml` | `ledger_settings/account` | 资金账户 |
+| `model/ledger_settings/category.xml` | `ledger_settings/category` | 分类 |
+| `model/bookkeeping/entry.xml` | `bookkeeping/entry` | 流水 |
+| `model/report/summary.xml` | `report/summary` | 报表统计 |
+
+前端 `myledger-h5` 的 `src/api` 与上述目录对齐时，见 **`.cursor/rules/myledger-h5-api-urls.mdc`**（完整 URL、禁止抽离公共前缀）。
+
+## 列名与强类型映射
+
+- SQL 与 dbfound **HTTP 查询 JSON** 的字段名与库表一致，采用 **snake_case**。
+- **`ModelExecutor.query*` 映射到 `Class`（JavaBean）时**，下划线列名与驼峰属性（如 `user_id` → `userId`）由框架**默认支持**，实体按 **标准驼峰** 编写即可，**不必**为 JavaBean 去开 **`dbfound.system.underscore-to-camel-case`**（该配置面向 **Map 等非 Bean 结果**里键名是否由下划线转驼峰，与强类型 Bean 无关）。
+- 对外 REST 由 Jackson 全局 **`PropertyNamingStrategies.SNAKE_CASE`** 输出 snake_case，与前端约定一致。

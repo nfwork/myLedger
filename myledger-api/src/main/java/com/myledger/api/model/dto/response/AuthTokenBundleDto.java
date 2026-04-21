@@ -17,7 +17,7 @@ public class AuthTokenBundleDto {
     private final long expiresIn;
 
     public AuthTokenBundleDto(MlUser user, String accessToken, String refreshToken, long expiresInSeconds) {
-        this.userId = user.getUser_id();
+        this.userId = user.getUserId();
         this.username = user.getUsername();
         this.nickname = user.getNickname();
         this.accessToken = accessToken;

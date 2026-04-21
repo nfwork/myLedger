@@ -29,11 +29,11 @@ public class RefreshTokenService {
         String hash = JwtService.sha256Hex(rawToken);
         Context q = new Context().withParam("token_hash", hash);
         RefreshTokenUserIdRow row = modelExecutor.queryOne(q, MODEL, "findValidUserIdByHash", RefreshTokenUserIdRow.class);
-        if (row == null || row.getUser_id() == null) {
+        if (row == null || row.getUserId() == null) {
             return null;
         }
         requireSuccess(modelExecutor.execute(new Context().withParam("token_hash", hash), MODEL, "deleteByHash"), "delete refresh token");
-        return row.getUser_id();
+        return row.getUserId();
     }
 
     public void revokeByPlaintext(String rawToken) {

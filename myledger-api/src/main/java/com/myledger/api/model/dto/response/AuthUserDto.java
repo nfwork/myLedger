@@ -24,7 +24,7 @@ public class AuthUserDto {
         if (mlUser == null) {
             return null;
         }
-        return new AuthUserDto(mlUser.getUser_id(), mlUser.getUsername(), mlUser.getNickname());
+        return new AuthUserDto(mlUser.getUserId(), mlUser.getUsername(), mlUser.getNickname());
     }
 
     public static AuthUserDto fromRequest(HttpServletRequest request) {
