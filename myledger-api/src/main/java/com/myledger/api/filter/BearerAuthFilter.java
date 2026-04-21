@@ -2,7 +2,7 @@ package com.myledger.api.filter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.myledger.api.model.dto.response.ApiResponse;
-import com.myledger.api.security.JwtService;
+import com.myledger.api.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

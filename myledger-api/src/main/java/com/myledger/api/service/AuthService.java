@@ -7,8 +7,6 @@ import com.myledger.api.model.dto.request.RefreshTokenBody;
 import com.myledger.api.model.dto.response.AuthTokenBundleDto;
 import com.myledger.api.model.dto.response.AuthUserDto;
 import com.myledger.api.model.entity.MlUser;
-import com.myledger.api.security.JwtService;
-import com.myledger.api.security.TokenHasher;
 import com.nfwork.dbfound.core.Context;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
@@ -99,7 +97,7 @@ public class AuthService {
         String access = jwtService.issueAccessToken(user.getUser_id(), user.getUsername(), user.getNickname());
         String refreshRaw = newRefreshTokenRaw();
         Instant exp = Instant.now().plusSeconds(jwtService.getRefreshTokenTtlSeconds());
-        refreshTokenService.insert(user.getUser_id(), TokenHasher.sha256Hex(refreshRaw), exp.getEpochSecond());
+        refreshTokenService.insert(user.getUser_id(), JwtService.sha256Hex(refreshRaw), exp.getEpochSecond());
         return new AuthTokenBundleDto(user, access, refreshRaw, jwtService.getAccessTokenTtlSeconds());
     }
 

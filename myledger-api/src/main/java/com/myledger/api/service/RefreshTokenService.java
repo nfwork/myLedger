@@ -2,7 +2,6 @@ package com.myledger.api.service;
 
 import com.github.nfwork.dbfound.starter.ModelExecutor;
 import com.myledger.api.model.entity.RefreshTokenUserIdRow;
-import com.myledger.api.security.TokenHasher;
 import com.nfwork.dbfound.core.Context;
 import com.nfwork.dbfound.dto.ResponseObject;
 import org.springframework.stereotype.Service;
@@ -27,7 +26,7 @@ public class RefreshTokenService {
     }
 
     public Long consumeByPlaintext(String rawToken) {
-        String hash = TokenHasher.sha256Hex(rawToken);
+        String hash = JwtService.sha256Hex(rawToken);
         Context q = new Context().withParam("token_hash", hash);
         RefreshTokenUserIdRow row = modelExecutor.queryOne(q, MODEL, "findValidUserIdByHash", RefreshTokenUserIdRow.class);
         if (row == null || row.getUser_id() == null) {
@@ -41,7 +40,7 @@ public class RefreshTokenService {
         if (rawToken == null || rawToken.isBlank()) {
             return;
         }
-        String hash = TokenHasher.sha256Hex(rawToken.trim());
+        String hash = JwtService.sha256Hex(rawToken.trim());
         modelExecutor.execute(new Context().withParam("token_hash", hash), MODEL, "deleteByHash");
     }
 
