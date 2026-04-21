@@ -2,6 +2,7 @@
 <model xmlns="http://dbfound.googlecode.com/model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://dbfound.googlecode.com/model https://raw.githubusercontent.com/nfwork/dbfound/master/tags/model.xsd">
 
+    <!-- 密码校验；AuthService 经 ModelExecutor 调用；HTTP 与其它 .query 一致须 Bearer（终端请用 /api/auth/login） -->
     <query name="login">
         <param name="username" dataType="varchar"/>
         <param name="password" dataType="varchar"/>
@@ -17,7 +18,20 @@
     </query>
 
     <query name="getById">
-        <param name="user_id" dataType="number" scope="session"/>
+        <param name="user_id" dataType="number" scope="request"/>
+        <sql>
+            SELECT
+                u.id AS user_id,
+                u.username,
+                u.nickname
+            FROM ml_user u
+            WHERE u.id = ${@user_id}
+        </sql>
+    </query>
+
+    <!-- 仅服务端 Java 调用（如 JWT refresh），入参为普通 param，不经 HTTP request 注入 -->
+    <query name="findByIdForAuth">
+        <param name="user_id" dataType="number"/>
         <sql>
             SELECT
                 u.id AS user_id,
@@ -73,7 +87,7 @@
     </execute>
 
     <execute name="updateProfile">
-        <param name="user_id" dataType="number" scope="session"/>
+        <param name="user_id" dataType="number" scope="request"/>
         <param name="nickname" dataType="varchar"/>
         <sqls>
             <executeSql>
@@ -86,7 +100,7 @@
     </execute>
 
     <execute name="changePassword">
-        <param name="user_id" dataType="number" scope="session"/>
+        <param name="user_id" dataType="number" scope="request"/>
         <param name="old_password" dataType="varchar"/>
         <param name="new_password" dataType="varchar"/>
         <sqls>

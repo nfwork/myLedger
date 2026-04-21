@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model xmlns="http://dbfound.googlecode.com/model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://dbfound.googlecode.com/model https://raw.githubusercontent.com/nfwork/dbfound/master/tags/model.xsd">
+
+    <query name="findValidUserIdByHash">
+        <param name="token_hash" dataType="varchar"/>
+        <sql>
+            SELECT user_id
+            FROM ml_refresh_token
+            WHERE token_hash = TRIM(${@token_hash})
+              AND expires_at &gt; NOW()
+        </sql>
+    </query>
+
+    <execute name="insert">
+        <param name="user_id" dataType="number"/>
+        <param name="token_hash" dataType="varchar"/>
+        <param name="expires_at" dataType="number"/>
+        <sqls>
+            <executeSql>
+                INSERT INTO ml_refresh_token (user_id, token_hash, expires_at, created_at)
+                VALUES (${@user_id}, TRIM(${@token_hash}), FROM_UNIXTIME(${@expires_at}), NOW())
+            </executeSql>
+        </sqls>
+    </execute>
+
+    <execute name="deleteByHash">
+        <param name="token_hash" dataType="varchar"/>
+        <sqls>
+            <executeSql>
+                DELETE FROM ml_refresh_token WHERE token_hash = TRIM(${@token_hash})
+            </executeSql>
+        </sqls>
+    </execute>
+
+    <execute name="deleteAllForUser">
+        <param name="user_id" dataType="number"/>
+        <sqls>
+            <executeSql>
+                DELETE FROM ml_refresh_token WHERE user_id = ${@user_id}
+            </executeSql>
+        </sqls>
+    </execute>
+
+    <execute name="deleteExpired">
+        <sqls>
+            <executeSql>
+                DELETE FROM ml_refresh_token WHERE expires_at &lt; NOW()
+            </executeSql>
+        </sqls>
+    </execute>
+</model>

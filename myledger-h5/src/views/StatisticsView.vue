@@ -1,9 +1,9 @@
 <template>
   <div class="stats-page">
     <section class="hero card">
-      <p class="hero-title">月 × 分类</p>
+      <p class="hero-title">月 × 分类（自然年）</p>
       <p class="hero-desc">
-        行为分类、列为最近 <strong>{{ WINDOW }}</strong> 个自然月（以结束月为准）；切换类型查看支出或收入分布。
+        行为月份、列为分类；按<strong>自然年</strong>汇总，默认当前年。查看<strong>今年</strong>时只展示到<strong>本月</strong>，往年仍为全年 12 个月。切换类型查看支出或收入分布。
       </p>
     </section>
 
@@ -35,13 +35,13 @@
           收入
         </button>
       </div>
-      <div class="month-bar">
-        <button type="button" class="nav-btn" @click="shiftWindow(-1)" aria-label="结束月上一月">‹</button>
+      <div class="year-bar">
+        <button type="button" class="nav-btn" @click="shiftYear(-1)" aria-label="上一年">‹</button>
         <div class="ym-block">
-          <span class="ym-label">数据截止到</span>
-          <span class="ym">{{ formatYearMonthLabel(windowEndYm) }}</span>
+          <span class="ym-label">统计区间</span>
+          <span class="ym">{{ selectedYear }}年</span>
         </div>
-        <button type="button" class="nav-btn" @click="shiftWindow(1)" aria-label="结束月下一月">›</button>
+        <button type="button" class="nav-btn" @click="shiftYear(1)" aria-label="下一年">›</button>
       </div>
     </div>
 
@@ -49,50 +49,52 @@
       <span class="loading-dot" />
       <span>加载中…</span>
     </div>
+    <div v-else-if="!matrix.cols.length" class="empty card">
+      该自然年暂无{{ entryType === 'expense' ? '支出' : '收入' }}数据
+    </div>
     <div v-else class="table-shell card">
       <div class="scroll-x">
         <table class="matrix" :class="entryType">
           <thead>
             <tr>
-              <th class="sticky-col corner" scope="col">分类</th>
+              <th class="sticky-col corner" scope="col">月份</th>
               <th
-                v-for="h in monthHeaders"
-                :key="h.ym"
-                class="col-ym"
-                :class="{ 'is-end-month': h.ym === windowEndYm }"
+                v-for="c in matrix.cols"
+                :key="c.id"
+                class="col-cat"
                 scope="col"
-                :title="formatYearMonthLabel(h.ym)"
+                :title="c.name"
               >
-                <span class="ym-compact">{{ formatYmCompact(h.ym) }}</span>
+                <span class="cat-head">{{ c.name }}</span>
               </th>
               <th class="total-col head-total" scope="col">合计</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(row, ri) in matrix.rows" :key="row.id" :class="{ zebra: ri % 2 === 1 }">
-              <th class="sticky-col cat-name" scope="row">{{ row.name }}</th>
+            <tr
+              v-for="(row, ri) in matrix.rows"
+              :key="row.ym"
+              :class="{ zebra: ri % 2 === 1, 'is-current-month-row': isCurrentMonthYm(row.ym) }"
+            >
+              <th class="sticky-col row-month" scope="row" :title="formatYearMonthLabel(row.ym)">{{ row.monthLabel }}</th>
               <td
                 v-for="(v, j) in row.amounts"
-                :key="monthKeys[j]"
+                :key="matrix.cols[j]?.id + '-' + row.ym"
                 class="num"
-                :class="{
-                  'is-zero': !v,
-                  'is-end-month': monthKeys[j] === windowEndYm,
-                }"
+                :class="{ 'is-zero': !v }"
               >
                 {{ cellMoney(v) }}
               </td>
               <td class="num total-col">{{ cellMoney(row.rowTotal) }}</td>
             </tr>
           </tbody>
-          <tfoot v-if="matrix.rows.length">
+          <tfoot v-if="matrix.cols.length">
             <tr class="foot-row">
-              <th class="sticky-col foot-lbl" scope="row">月度合计</th>
+              <th class="sticky-col foot-lbl" scope="row">分类合计</th>
               <td
                 v-for="(v, j) in matrix.colTotals"
-                :key="'ft-' + monthKeys[j]"
+                :key="'ft-' + matrix.cols[j]?.id"
                 class="num foot-num"
-                :class="{ 'is-end-month': monthKeys[j] === windowEndYm }"
               >
                 {{ cellMoney(v) }}
               </td>
@@ -101,7 +103,6 @@
           </tfoot>
         </table>
       </div>
-      <p v-if="!matrix.rows.length" class="empty">该区间暂无{{ entryType === 'expense' ? '支出' : '收入' }}数据</p>
     </div>
   </div>
 </template>
@@ -116,19 +117,12 @@ import {
   setScopeAccountId,
   accountFilterParams,
 } from '@/composables/accountFilterScope'
-import {
-  currentYearMonth,
-  shiftYearMonth,
-  formatMoney,
-  formatYearMonthLabel,
-  formatYmCompact,
-} from '@/utils/format'
+import { currentYearMonth, formatMoney, formatYearMonthLabel } from '@/utils/format'
 import { useToast } from '@/composables/useToast'
 
-const WINDOW = 12
 const toast = useToast()
 
-const windowEndYm = ref(currentYearMonth())
+const selectedYear = ref(new Date().getFullYear())
 const entryType = ref('expense')
 const loading = ref(false)
 const flatRows = ref([])
@@ -138,27 +132,37 @@ const accountPick = computed({
   set: (v) => setScopeAccountId(v === '' || v == null ? null : v),
 })
 
-const months = computed(() => rangeYearMonthsAscending(windowEndYm.value, WINDOW))
-const monthKeys = computed(() => months.value)
+const monthsInSelectedYear = computed(() => visibleMonthsForStats(selectedYear.value))
 
-const monthHeaders = computed(() => months.value.map((ym) => ({ ym })))
+const matrix = computed(() => buildMatrix(flatRows.value, monthsInSelectedYear.value))
 
-const matrix = computed(() => buildMatrix(flatRows.value, months.value))
-
-function rangeYearMonthsAscending(endYm, count) {
-  const rev = []
-  let ym = endYm
-  for (let i = 0; i < count; i++) {
-    rev.push(ym)
-    ym = shiftYearMonth(ym, -1)
-  }
-  return rev.reverse()
+function monthsOfCalendarYear(year) {
+  const y = String(year)
+  return Array.from({ length: 12 }, (_, i) => `${y}-${String(i + 1).padStart(2, '0')}`)
 }
 
-function shiftWindow(delta) {
-  windowEndYm.value = shiftYearMonth(windowEndYm.value, delta)
+/** 往年：1–12 月；今年：1 月～本月；未来年：整年（便于占位，一般无数据） */
+function visibleMonthsForStats(year) {
+  const full = monthsOfCalendarYear(year)
+  const y = Number(year)
+  const now = new Date()
+  const cy = now.getFullYear()
+  const cm = now.getMonth() + 1
+  if (y < cy) return full
+  if (y > cy) return full
+  return full.slice(0, cm)
 }
 
+function shiftYear(delta) {
+  selectedYear.value += delta
+}
+
+function monthLabelFromYm(ym) {
+  const mo = Number(String(ym).split('-')[1])
+  return Number.isFinite(mo) ? `${mo}月` : String(ym)
+}
+
+/** 行=自然月，列=分类（按当前展示区间内各分类合计降序） */
 function buildMatrix(flat, monthsList) {
   const catMap = new Map()
   for (const r of flat) {
@@ -171,15 +175,30 @@ function buildMatrix(flat, monthsList) {
     const cur = catMap.get(id).byMonth[ym] || 0
     catMap.get(id).byMonth[ym] = cur + amt
   }
-  const rows = [...catMap.values()].map((c) => {
-    const amounts = monthsList.map((ym) => Number(c.byMonth[ym] || 0))
+
+  const cats = [...catMap.values()]
+    .map((c) => {
+      const total = monthsList.reduce((s, ym) => s + Number(c.byMonth[ym] || 0), 0)
+      return { id: c.id, name: c.name, byMonth: c.byMonth, total }
+    })
+    .sort((a, b) => b.total - a.total)
+
+  const cols = cats.map((c) => ({ id: c.id, name: c.name }))
+
+  const rows = monthsList.map((ym) => {
+    const amounts = cats.map((c) => Number(c.byMonth[ym] || 0))
     const rowTotal = amounts.reduce((s, v) => s + v, 0)
-    return { id: c.id, name: c.name, amounts, rowTotal }
+    return { ym, monthLabel: monthLabelFromYm(ym), amounts, rowTotal }
   })
-  rows.sort((a, b) => b.rowTotal - a.rowTotal)
-  const colTotals = monthsList.map((_, j) => rows.reduce((s, row) => s + row.amounts[j], 0))
+
+  const colTotals = cats.map((_, j) => rows.reduce((s, row) => s + row.amounts[j], 0))
   const grand = colTotals.reduce((s, v) => s + v, 0)
-  return { rows, colTotals, grand }
+
+  return { rows, cols, colTotals, grand }
+}
+
+function isCurrentMonthYm(ym) {
+  return selectedYear.value === new Date().getFullYear() && ym === currentYearMonth()
 }
 
 function cellMoney(n) {
@@ -190,7 +209,8 @@ function cellMoney(n) {
 
 async function load() {
   loading.value = true
-  const list = rangeYearMonthsAscending(windowEndYm.value, WINDOW)
+  const y = selectedYear.value
+  const list = visibleMonthsForStats(y)
   if (!list.length) {
     flatRows.value = []
     loading.value = false
@@ -217,7 +237,7 @@ async function load() {
   }
 }
 
-watch([windowEndYm, entryType, scopeAccountId], load)
+watch([selectedYear, entryType, scopeAccountId], load)
 onMounted(load)
 </script>
 
@@ -311,7 +331,7 @@ onMounted(load)
   box-shadow: 0 1px 3px rgb(15 23 42 / 0.08);
 }
 
-.month-bar {
+.year-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -415,18 +435,22 @@ onMounted(load)
   vertical-align: bottom;
   padding-bottom: 0.58rem;
 }
-.matrix .col-ym {
-  min-width: 3.5rem;
+.matrix .col-cat {
+  min-width: 4rem;
+  max-width: 7rem;
   text-align: right;
   padding-left: 0.35rem;
   padding-right: 0.35rem;
 }
-.ym-compact {
-  font-family: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, monospace;
+.cat-head {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.02em;
   color: rgb(71 85 105);
+  text-align: right;
 }
 .matrix .head-total {
   text-align: right;
@@ -460,9 +484,6 @@ onMounted(load)
   border-left: 1px solid rgb(13 148 136 / 0.15);
   background: #f0f9f8;
 }
-.matrix thead th.col-ym.is-end-month {
-  background: #d2ebe6;
-}
 .matrix tbody td.num:not(.total-col) {
   background: #fff;
 }
@@ -472,16 +493,16 @@ onMounted(load)
 .matrix tbody tr.zebra td.num:not(.total-col) {
   background: #f1f5f9;
 }
-.matrix tbody td.num.is-end-month:not(.total-col) {
+.matrix tbody tr.is-current-month-row td.num:not(.total-col) {
   background: #daf2ec;
 }
-.matrix tbody tr.zebra td.num.is-end-month:not(.total-col) {
+.matrix tbody tr.is-current-month-row.zebra td.num:not(.total-col) {
   background: #cfe9e2;
 }
 .matrix tbody tr:hover td.num:not(.total-col) {
   background: #ecfdf5;
 }
-.matrix tbody tr:hover td.num.is-end-month:not(.total-col) {
+.matrix tbody tr.is-current-month-row:hover td.num:not(.total-col) {
   background: #c5ebe3;
 }
 .matrix tbody tr.zebra td.total-col {
@@ -510,17 +531,24 @@ onMounted(load)
 .matrix tbody tr:not(.zebra) .sticky-col {
   background: var(--surface);
 }
+.matrix tbody tr.is-current-month-row .sticky-col {
+  background: #daf2ec;
+}
+.matrix tbody tr.is-current-month-row.zebra .sticky-col {
+  background: #cfe9e2;
+}
 .matrix tbody tr:hover .sticky-col {
   background: #ecfdf5;
 }
+.matrix tbody tr.is-current-month-row:hover .sticky-col {
+  background: #c5ebe3;
+}
 
-.cat-name {
+.row-month {
   font-weight: 700;
   font-size: 0.8rem;
   color: var(--text);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 
 .matrix tfoot .sticky-col,
@@ -533,9 +561,6 @@ onMounted(load)
   background: #e6f4f2;
   padding-top: 0.78rem;
   padding-bottom: 0.78rem;
-}
-.matrix tfoot tr.foot-row td.num.is-end-month:not(.total-col) {
-  background: #cceee6;
 }
 .foot-row .sticky-col {
   z-index: 3;
@@ -554,11 +579,10 @@ onMounted(load)
 
 .empty {
   margin: 0;
-  padding: 1.35rem 1rem 1.15rem;
+  padding: 1.75rem 1.15rem;
   text-align: center;
   color: var(--muted);
   font-size: 0.88rem;
   font-weight: 500;
-  border-top: 1px solid var(--line);
 }
 </style>

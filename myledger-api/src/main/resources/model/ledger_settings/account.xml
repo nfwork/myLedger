@@ -2,7 +2,7 @@
 <model xmlns="http://dbfound.googlecode.com/model" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://dbfound.googlecode.com/model https://raw.githubusercontent.com/nfwork/dbfound/master/tags/model.xsd">
 
-    <param name="user_id" dataType="number" scope="session"/>
+    <param name="user_id" dataType="number" scope="request"/>
 
     <query name="listByUser">
         <sql>

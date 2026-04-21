@@ -1,6 +1,6 @@
 :root {
   /* PC：主内容区最大宽度，与 App.vue / TabBar 对齐 */
-  --app-shell-max: 600px;
+  --app-shell-max: 500px;
   --app-desktop-breakpoint: 720px;
   --bg: #f4fbfb;
   --bg-deep: #e6f4f2;

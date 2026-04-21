@@ -1,10 +1,12 @@
 import axios from 'axios'
+import { clearTokens, getAccessToken, getRefreshToken, setTokensFromApi } from '../auth/tokenStorage'
+import { isUnrecoverableRefreshFailure, postRefreshRaw } from '../auth/refreshBare'
 
-/** 全局 Axios：baseURL、超时、携带 Cookie（Session） */
+/** 全局 Axios：baseURL、超时；鉴权为 Bearer（不再依赖 Cookie Session） */
 export const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || '',
   timeout: 20000,
-  withCredentials: true,
+  withCredentials: false,
 })
 
 /**
@@ -29,10 +31,59 @@ export function pickHttpErrorMessage(data) {
   return m
 }
 
+/** @type {Promise<void> | null} */
+let refreshChain = null
+
+function runRefreshChain() {
+  if (!refreshChain) {
+    refreshChain = (async () => {
+      const rt = getRefreshToken()
+      if (!rt) throw new Error('no refresh token')
+      const body = await postRefreshRaw(rt)
+      if (!body?.success || !body.data) {
+        throw new Error(body?.message || '刷新失败')
+      }
+      setTokensFromApi(body.data)
+    })().finally(() => {
+      refreshChain = null
+    })
+  }
+  return refreshChain
+}
+
+http.interceptors.request.use((config) => {
+  const url = String(config.url || '')
+  if (url.includes('/api/auth/refresh')) {
+    return config
+  }
+  const token = getAccessToken()
+  if (token) {
+    config.headers = config.headers || {}
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 http.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const res = error.response
+    const cfg = /** @type {import('axios').InternalAxiosRequestConfig & { _authRetry?: boolean }} */ (
+      error.config || {}
+    )
+
+    if (res?.status === 401 && !cfg._authRetry && shouldTryRefresh(cfg)) {
+      cfg._authRetry = true
+      try {
+        await runRefreshChain()
+        return http(cfg)
+      } catch (refreshErr) {
+        if (isUnrecoverableRefreshFailure(refreshErr)) {
+          clearTokens()
+        }
+      }
+    }
+
     const fromBody = pickHttpErrorMessage(res?.data)
     if (fromBody) {
       const next = new Error(fromBody)
@@ -45,3 +96,14 @@ http.interceptors.response.use(
     return Promise.reject(error)
   },
 )
+
+/**
+ * @param {import('axios').InternalAxiosRequestConfig} cfg
+ */
+function shouldTryRefresh(cfg) {
+  const url = String(cfg.url || '')
+  if (url.includes('/api/auth/login') || url.includes('/api/auth/refresh')) {
+    return false
+  }
+  return !!getRefreshToken()
+}

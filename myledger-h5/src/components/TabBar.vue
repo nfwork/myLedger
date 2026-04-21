@@ -103,8 +103,8 @@
   .tab-bar {
     left: 50%;
     right: auto;
-    width: min(var(--app-shell-max, 600px), 100%);
-    max-width: var(--app-shell-max, 600px);
+    width: min(var(--app-shell-max, 500px), 100%);
+    max-width: var(--app-shell-max, 500px);
     transform: translateX(-50%);
     border-left: 1px solid rgb(13 148 136 / 0.08);
     border-right: 1px solid rgb(13 148 136 / 0.08);

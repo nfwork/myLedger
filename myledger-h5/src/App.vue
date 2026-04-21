@@ -27,7 +27,7 @@ import UiToast from '@/components/UiToast.vue'
     align-items: center;
   }
   .app-shell {
-    max-width: var(--app-shell-max, 600px);
+    max-width: var(--app-shell-max, 500px);
     min-height: 100dvh;
     background: var(--bg);
     box-shadow: var(--shadow-lg);

@@ -1,6 +1,14 @@
 server:
   port: 8080
 
+# JWT：生产务必用环境变量覆盖 secret（HS256 至少 256 bit）
+myledger:
+  security:
+    jwt:
+      secret: "myledger-dev-jwt-secret-please-change-32b-min!!"
+      access-token-ttl-seconds: 900
+      refresh-token-ttl-seconds: 2592000
+
 spring:
   application:
     name: myledger-api
@@ -8,6 +16,9 @@ spring:
     active: '@spring.profiles.active@'
 
 dbfound:
+  # JWT 鉴权，不再用 HttpSession；关闭 dbfound 对 session 的读写（见 DBFoundConfigProperties.WebConfig#openSession）
+  web:
+    open-session: false
   datasource:
     db0:
       url: jdbc:mysql://127.0.0.1:3306/myledger?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai

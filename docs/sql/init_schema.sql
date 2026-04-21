@@ -21,6 +21,24 @@ CREATE TABLE IF NOT EXISTS ml_user (
   COMMENT='用户';
 
 -- ---------------------------------------------------------------------------
+-- JWT 刷新令牌（仅存 SHA-256 hex，不存明文）
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS ml_refresh_token (
+  id          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT COMMENT '主键',
+  user_id     BIGINT UNSIGNED NOT NULL COMMENT '所属用户',
+  token_hash  CHAR(64)        NOT NULL COMMENT 'refresh_token 的 SHA-256 小写 hex',
+  expires_at  DATETIME        NOT NULL COMMENT '过期时间',
+  created_at  DATETIME        NOT NULL COMMENT '签发时间',
+  PRIMARY KEY (id),
+  UNIQUE KEY uk_ml_refresh_token_hash (token_hash),
+  KEY idx_ml_refresh_token_user (user_id),
+  KEY idx_ml_refresh_token_expires (expires_at),
+  CONSTRAINT fk_ml_refresh_token_user FOREIGN KEY (user_id) REFERENCES ml_user (id)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='JWT 刷新令牌';
+
+-- ---------------------------------------------------------------------------
 -- 资金账户（现金 / 银行卡 / 第三方支付等）
 -- ---------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS ml_account (

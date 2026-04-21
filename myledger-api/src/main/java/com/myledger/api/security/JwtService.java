@@ -1,0 +1,77 @@
+package com.myledger.api.security;
+
+import com.myledger.api.config.JwtSecurityProperties;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
+import org.springframework.stereotype.Service;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.Date;
+import java.util.Optional;
+
+@Service
+public class JwtService {
+
+    public static final String CLAIM_USERNAME = "username";
+    public static final String CLAIM_NICKNAME = "nickname";
+
+    private final JwtSecurityProperties props;
+    private final SecretKey key;
+
+    public JwtService(JwtSecurityProperties props) {
+        this.props = props;
+        this.key = Keys.hmacShaKeyFor(props.getSecret().getBytes(StandardCharsets.UTF_8));
+    }
+
+    public String issueAccessToken(long userId, String username, String nickname) {
+        Instant now = Instant.now();
+        Instant exp = now.plusSeconds(props.getAccessTokenTtlSeconds());
+        String u = username != null ? username : "";
+        String n = nickname != null ? nickname : "";
+        return Jwts.builder()
+                .subject(Long.toString(userId))
+                .claim(CLAIM_USERNAME, u)
+                .claim(CLAIM_NICKNAME, n)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(exp))
+                .signWith(key)
+                .compact();
+    }
+
+    public Optional<JwtAccessPrincipal> parseAccessToken(String token) {
+        if (token == null || token.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token.trim())
+                    .getPayload();
+            long userId = Long.parseLong(claims.getSubject());
+            String username = claims.get(CLAIM_USERNAME, String.class);
+            String nickname = claims.get(CLAIM_NICKNAME, String.class);
+            return Optional.of(new JwtAccessPrincipal(userId, username, nickname));
+        } catch (ExpiredJwtException e) {
+            return Optional.empty();
+        } catch (JwtException | IllegalArgumentException e) {
+            return Optional.empty();
+        }
+    }
+
+    public int getAccessTokenTtlSeconds() {
+        return props.getAccessTokenTtlSeconds();
+    }
+
+    public int getRefreshTokenTtlSeconds() {
+        return props.getRefreshTokenTtlSeconds();
+    }
+
+    public record JwtAccessPrincipal(long userId, String username, String nickname) {
+    }
+}

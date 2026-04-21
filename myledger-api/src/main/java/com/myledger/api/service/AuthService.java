@@ -1,30 +1,79 @@
 package com.myledger.api.service;
 
 import com.github.nfwork.dbfound.starter.ModelExecutor;
+import com.myledger.api.filter.BearerAuthFilter;
 import com.myledger.api.model.dto.request.LoginRequest;
+import com.myledger.api.model.dto.request.RefreshTokenBody;
+import com.myledger.api.model.dto.response.AuthTokenBundleDto;
 import com.myledger.api.model.dto.response.AuthUserDto;
 import com.myledger.api.model.entity.MlUser;
+import com.myledger.api.security.JwtService;
+import com.myledger.api.security.TokenHasher;
 import com.nfwork.dbfound.core.Context;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
-import jakarta.servlet.http.HttpSession;
+import java.security.SecureRandom;
+import java.time.Instant;
+import java.util.HexFormat;
 
 @Service
 public class AuthService {
 
-    private final ModelExecutor modelExecutor;
+    private static final SecureRandom RANDOM = new SecureRandom();
 
-    public AuthService(ModelExecutor modelExecutor) {
+    private final ModelExecutor modelExecutor;
+    private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
+
+    public AuthService(ModelExecutor modelExecutor, JwtService jwtService, RefreshTokenService refreshTokenService) {
         this.modelExecutor = modelExecutor;
+        this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
     }
 
     /**
-     * 校验账号密码，写入 Session 并返回用户信息。
+     * 校验账号密码，签发 access JWT 与 refresh（入库为哈希），同一用户旧 refresh 全部作废。
      */
-    public AuthUserDto login(LoginRequest body, HttpSession session) {
+    public AuthTokenBundleDto login(LoginRequest body) {
+        MlUser mlUser = authenticateCredentials(body);
+        refreshTokenService.deleteAllForUser(mlUser.getUser_id());
+        return issueTokenBundle(mlUser);
+    }
+
+    public AuthTokenBundleDto refresh(RefreshTokenBody body) {
+        if (body == null || !StringUtils.hasText(body.getRefreshToken())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 refresh_token");
+        }
+        Long userId = refreshTokenService.consumeByPlaintext(body.getRefreshToken().trim());
+        if (userId == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "刷新令牌无效或已过期");
+        }
+        MlUser user = findUserByIdForAuth(userId);
+        if (user == null || user.getUser_id() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户不存在");
+        }
+        return issueTokenBundle(user);
+    }
+
+    public void logout(String refreshTokenPlain) {
+        if (StringUtils.hasText(refreshTokenPlain)) {
+            refreshTokenService.revokeByPlaintext(refreshTokenPlain.trim());
+        }
+    }
+
+    public AuthUserDto requireCurrentUser(HttpServletRequest request) {
+        Object raw = request.getAttribute(BearerAuthFilter.ATTR_USER_ID);
+        if (raw == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "未登录");
+        }
+        return AuthUserDto.fromRequest(request);
+    }
+
+    private MlUser authenticateCredentials(LoginRequest body) {
         if (body == null || !StringUtils.hasText(body.getUsername()) || !StringUtils.hasText(body.getPassword())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "缺少 username 或 password");
         }
@@ -32,7 +81,6 @@ public class AuthService {
         if (username.length() < 4) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户名至少4个字符");
         }
-
         Context ctx = new Context()
                 .withParam("username", username)
                 .withParam("password", body.getPassword());
@@ -40,27 +88,24 @@ public class AuthService {
         if (mlUser == null || mlUser.getUser_id() == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户名或密码错误");
         }
-
-        AuthUserDto user = AuthUserDto.fromMlUser(mlUser);
-
-        session.setAttribute("user_id", user.getUserId());
-        session.setAttribute("username", user.getUsername());
-        session.setAttribute("nickname", user.getNickname());
-        return user;
+        return mlUser;
     }
 
-    public void logout(HttpSession session) {
-        session.invalidate();
+    private MlUser findUserByIdForAuth(long userId) {
+        return modelExecutor.queryOne(new Context().withParam("user_id", userId), "user/user", "findByIdForAuth", MlUser.class);
     }
 
-    /**
-     * 当前登录用户；未登录则抛出 401。
-     */
-    public AuthUserDto requireCurrentUser(HttpSession session) {
-        Object raw = session.getAttribute("user_id");
-        if (raw == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "未登录");
-        }
-        return AuthUserDto.fromSession(session);
+    private AuthTokenBundleDto issueTokenBundle(MlUser user) {
+        String access = jwtService.issueAccessToken(user.getUser_id(), user.getUsername(), user.getNickname());
+        String refreshRaw = newRefreshTokenRaw();
+        Instant exp = Instant.now().plusSeconds(jwtService.getRefreshTokenTtlSeconds());
+        refreshTokenService.insert(user.getUser_id(), TokenHasher.sha256Hex(refreshRaw), exp.getEpochSecond());
+        return new AuthTokenBundleDto(user, access, refreshRaw, jwtService.getAccessTokenTtlSeconds());
+    }
+
+    private static String newRefreshTokenRaw() {
+        byte[] b = new byte[32];
+        RANDOM.nextBytes(b);
+        return HexFormat.of().formatHex(b);
     }
 }
