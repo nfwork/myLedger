@@ -63,12 +63,30 @@ public class AuthService {
         }
     }
 
+    /**
+     * 当前用户资料（供 {@code GET /api/auth/me}）。昵称、用户名等以库表为准，避免 JWT 内嵌字段过期导致界面不刷新。
+     */
     public AuthUserDto requireCurrentUser(HttpServletRequest request) {
         Object raw = request.getAttribute(BearerAuthFilter.ATTR_USER_ID);
         if (raw == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "未登录");
         }
-        return AuthUserDto.fromRequest(request);
+        long userId = parseRequestUserId(raw);
+        MlUser user = findUserByIdForAuth(userId);
+        if (user == null || user.getUserId() == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "用户不存在");
+        }
+        return AuthUserDto.fromMlUser(user);
+    }
+
+    private static long parseRequestUserId(Object raw) {
+        if (raw instanceof Number n) {
+            return n.longValue();
+        }
+        if (raw instanceof String s && !s.isBlank()) {
+            return Long.parseLong(s.trim());
+        }
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "无效用户");
     }
 
     private MlUser authenticateCredentials(LoginRequest body) {
@@ -94,7 +112,7 @@ public class AuthService {
     }
 
     private AuthTokenBundleDto issueTokenBundle(MlUser user) {
-        String access = jwtService.issueAccessToken(user.getUserId(), user.getUsername(), user.getNickname());
+        String access = jwtService.issueAccessToken(user.getUserId(), user.getUsername());
         String refreshRaw = newRefreshTokenRaw();
         Instant exp = Instant.now().plusSeconds(jwtService.getRefreshTokenTtlSeconds());
         refreshTokenService.insert(user.getUserId(), JwtService.sha256Hex(refreshRaw), exp.getEpochSecond());

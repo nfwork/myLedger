@@ -19,8 +19,8 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * 校验 {@code Authorization: Bearer &lt;access_jwt&gt;}，将 {@code user_id}、{@code username}、{@code nickname}
- * 写入 request attribute，供 dbfound {@code scope="request"} 使用。
+ * 校验 {@code Authorization: Bearer &lt;access_jwt&gt;}，将 {@code user_id}、{@code username}
+ * 写入 request attribute，供 dbfound {@code scope="request"} 使用。昵称不在 JWT 内，需从库读（如 {@code GET /api/auth/me}）。
  */
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE + 100)
@@ -28,7 +28,6 @@ public class BearerAuthFilter extends OncePerRequestFilter {
 
     public static final String ATTR_USER_ID = "user_id";
     public static final String ATTR_USERNAME = "username";
-    public static final String ATTR_NICKNAME = "nickname";
 
     private static final Set<String> ANONYMOUS_PATHS = Set.of(
             "/api/health",
@@ -74,7 +73,6 @@ public class BearerAuthFilter extends OncePerRequestFilter {
         JwtService.JwtAccessPrincipal p = principal.get();
         request.setAttribute(ATTR_USER_ID, p.userId());
         request.setAttribute(ATTR_USERNAME, p.username() != null ? p.username() : "");
-        request.setAttribute(ATTR_NICKNAME, p.nickname() != null ? p.nickname() : "");
 
         filterChain.doFilter(request, response);
     }

@@ -21,7 +21,6 @@ import java.util.Optional;
 public class JwtService {
 
     public static final String CLAIM_USERNAME = "username";
-    public static final String CLAIM_NICKNAME = "nickname";
 
     private final JwtSecurityProperties props;
     private final SecretKey key;
@@ -42,15 +41,13 @@ public class JwtService {
         }
     }
 
-    public String issueAccessToken(long userId, String username, String nickname) {
+    public String issueAccessToken(long userId, String username) {
         Instant now = Instant.now();
         Instant exp = now.plusSeconds(props.getAccessTokenTtlSeconds());
         String u = username != null ? username : "";
-        String n = nickname != null ? nickname : "";
         return Jwts.builder()
                 .subject(Long.toString(userId))
                 .claim(CLAIM_USERNAME, u)
-                .claim(CLAIM_NICKNAME, n)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(exp))
                 .signWith(key)
@@ -69,8 +66,7 @@ public class JwtService {
                     .getPayload();
             long userId = Long.parseLong(claims.getSubject());
             String username = claims.get(CLAIM_USERNAME, String.class);
-            String nickname = claims.get(CLAIM_NICKNAME, String.class);
-            return Optional.of(new JwtAccessPrincipal(userId, username, nickname));
+            return Optional.of(new JwtAccessPrincipal(userId, username));
         } catch (ExpiredJwtException e) {
             return Optional.empty();
         } catch (JwtException | IllegalArgumentException e) {
@@ -86,6 +82,6 @@ public class JwtService {
         return props.getRefreshTokenTtlSeconds();
     }
 
-    public record JwtAccessPrincipal(long userId, String username, String nickname) {
+    public record JwtAccessPrincipal(long userId, String username) {
     }
 }
