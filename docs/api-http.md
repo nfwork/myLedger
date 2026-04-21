@@ -6,7 +6,7 @@
 
 ## 登录与鉴权（JWT + dbfound request 作用域）
 
-1. **`POST /api/auth/login`**（JSON：`username`, `password`）→ 返回 **`access_token`**（JWT）、**`refresh_token`**（opaque，仅本次响应明文）、**`token_type`**（`Bearer`）、**`expires_in`**（秒）、以及 **`user_id` / `username` / `nickname`**。服务端**不再**依赖 HttpSession 作为 API 鉴权。
+1. **`POST /api/auth/login`**（JSON：`username`, `password`）→ 返回 **`access_token`**（JWT）、**`refresh_token`**（opaque，仅本次响应明文）、**`token_type`**（`Bearer`）、**`expires_in`**（秒）、以及 **`user_id` / `username` / `nickname`**。服务端**不再**依赖 HttpSession 作为 API 鉴权。**同一用户可多处同时登录**：每次登录在 **`ml_refresh_token`** 新增一行，**不会**按用户删除其它设备已有 refresh。
 2. 受保护请求须带：**`Authorization: Bearer <access_token>`**。
 3. **`BearerAuthFilter`**：无令牌或 JWT 无效/过期则 **401**：`{"success":false,"message":"未登录或访问令牌已过期"}`；通过后把 **`user_id`、`username`** 写入 **`HttpServletRequest` 的 attribute**（access JWT 不含昵称；昵称见登录/refresh 包体或 **`GET /api/auth/me`** 读库）。
 4. dbfound 中 **`user_id` 为 `scope="request"`**，取自上述 attribute；**请求体不要传 `user_id`**。

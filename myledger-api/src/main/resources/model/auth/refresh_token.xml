@@ -33,15 +33,6 @@
         </sqls>
     </execute>
 
-    <execute name="deleteAllForUser">
-        <param name="user_id" dataType="number"/>
-        <sqls>
-            <executeSql>
-                DELETE FROM ml_refresh_token WHERE user_id = ${@user_id}
-            </executeSql>
-        </sqls>
-    </execute>
-
     <execute name="deleteExpired">
         <sqls>
             <executeSql>

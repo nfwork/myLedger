@@ -34,11 +34,10 @@ public class AuthService {
     }
 
     /**
-     * 校验账号密码，签发 access JWT 与 refresh（入库为哈希），同一用户旧 refresh 全部作废。
+     * 校验账号密码，签发 access JWT 与 refresh（入库为哈希）。同一用户可多处同时登录，每次登录新增一条 refresh，不按用户作废其它会话。
      */
     public AuthTokenBundleDto login(LoginRequest body) {
         MlUser mlUser = authenticateCredentials(body);
-        refreshTokenService.deleteAllForUser(mlUser.getUserId());
         return issueTokenBundle(mlUser);
     }
 

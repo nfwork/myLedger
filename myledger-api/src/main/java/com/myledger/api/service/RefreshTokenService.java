@@ -44,10 +44,6 @@ public class RefreshTokenService {
         modelExecutor.execute(new Context().withParam("token_hash", hash), MODEL, "deleteByHash");
     }
 
-    public void deleteAllForUser(long userId) {
-        requireSuccess(modelExecutor.execute(new Context().withParam("user_id", userId), MODEL, "deleteAllForUser"), "delete refresh tokens for user");
-    }
-
     public void deleteExpired() {
         modelExecutor.execute(new Context(), MODEL, "deleteExpired");
     }
