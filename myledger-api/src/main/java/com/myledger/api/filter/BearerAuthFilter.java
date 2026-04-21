@@ -7,8 +7,6 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -23,7 +21,6 @@ import java.util.Set;
  * 写入 request attribute，供 dbfound {@code scope="request"} 使用。昵称不在 JWT 内，需从库读（如 {@code GET /api/auth/me}）。
  */
 @Component
-@Order(Ordered.HIGHEST_PRECEDENCE + 100)
 public class BearerAuthFilter extends OncePerRequestFilter {
 
     public static final String ATTR_USER_ID = "user_id";
