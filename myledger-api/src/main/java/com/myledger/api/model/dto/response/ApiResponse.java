@@ -1,11 +1,9 @@
 package com.myledger.api.model.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 /**
  * 与前端约定的通用 JSON 外壳：{@code success}、{@code message}、{@code data}。
+ * 序列化策略见 {@link com.myledger.api.config.JacksonJsonConfig}。
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
 
     private final boolean success;

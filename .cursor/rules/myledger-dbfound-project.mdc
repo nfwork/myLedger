@@ -30,4 +30,4 @@ alwaysApply: false
 
 - SQL 与 dbfound **HTTP 查询 JSON** 的字段名与库表一致，采用 **snake_case**。
 - **`ModelExecutor.query*` 映射到 `Class`（JavaBean）时**，下划线列名与驼峰属性（如 `user_id` → `userId`）由框架**默认支持**，实体按 **标准驼峰** 编写即可，**不必**为 JavaBean 去开 **`dbfound.system.underscore-to-camel-case`**（该配置面向 **Map 等非 Bean 结果**里键名是否由下划线转驼峰，与强类型 Bean 无关）。
-- 对外 REST 由 Jackson 全局 **`PropertyNamingStrategies.SNAKE_CASE`** 输出 snake_case，与前端约定一致。
+- 对外 REST 的 JSON 约定集中在 **`myledger-api/.../config/JacksonJsonConfig.java`**（snake_case、NON_NULL 等），DTO 上不堆 Jackson 注解。

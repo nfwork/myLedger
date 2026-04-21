@@ -1,6 +1,5 @@
 package com.myledger.api.model.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.myledger.api.filter.BearerAuthFilter;
 import com.myledger.api.model.entity.MlUser;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,7 +46,6 @@ public class AuthUserDto {
         throw new IllegalArgumentException("无法解析为 Long: " + raw);
     }
 
-    @JsonProperty("user_id")
     public Long getUserId() {
         return userId;
     }

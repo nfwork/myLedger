@@ -1,6 +1,5 @@
 package com.myledger.api.model.dto.response;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.myledger.api.model.entity.MlUser;
 
 /**
@@ -26,7 +25,6 @@ public class AuthTokenBundleDto {
         this.expiresIn = expiresInSeconds;
     }
 
-    @JsonProperty("user_id")
     public Long getUserId() {
         return userId;
     }
@@ -39,22 +37,18 @@ public class AuthTokenBundleDto {
         return nickname;
     }
 
-    @JsonProperty("access_token")
     public String getAccessToken() {
         return accessToken;
     }
 
-    @JsonProperty("refresh_token")
     public String getRefreshToken() {
         return refreshToken;
     }
 
-    @JsonProperty("token_type")
     public String getTokenType() {
         return tokenType;
     }
 
-    @JsonProperty("expires_in")
     public long getExpiresIn() {
         return expiresIn;
     }
