@@ -1,0 +1,32 @@
+# ---------- Gradle / 构建产物（勿提交）----------
+.gradle/
+build/
+**/build/
+
+# Kotlin 2.0+ / Gradle 8 增量缓存目录
+.kotlin/
+
+# CMake / NDK 本地生成
+.externalNativeBuild/
+.cxx/
+
+# ---------- 本机与隐私（勿提交）----------
+# SDK 路径、本机 JVM 等（请保留 local.properties.example 供参考）
+local.properties
+*.keystore
+*.jks
+
+# ---------- 调试产物（勿提交）----------
+captures/
+*.hprof
+
+# ---------- 常见误提交的安装包（若拷贝到模块外）----------
+*.apk
+*.aab
+*.ap_
+
+# ---------- Lint 临时输出（若在模块根执行）----------
+lint/tmp/
+lint/intermediates/
+lint/generated/
+lint/outputs/

@@ -8,6 +8,7 @@
 | --- | --- |
 | [myledger-api/](myledger-api/) | 后端：**Spring Boot 3.2** + **dbfound**（`dbfound-spring-boot-starter`），MySQL；业务在 **`resources/model/`**（`user/`、`ledger_settings/`、`bookkeeping/`、`report/`） |
 | [myledger-h5/](myledger-h5/) | 前端：**Vue 3** + **Vite 2**；**`src/api/`** 与后端 model 目录对齐；dbfound 路径须写**完整字面量**（见 `.cursor/rules/myledger-h5-api-urls.mdc`） |
+| [myledger-android/](myledger-android/) | 客户端：**Kotlin** + **Jetpack Compose**；与 H5 共用 **`docs/api-http.md`** 契约；**`BuildConfig.API_BASE`** 与文档一致为 **`http://192.168.0.156:8080/`**（见 **`myledger-android/gradle.properties`** 的 **`MYLEDGER_API_BASE`**） |
 
 后续可增加其它客户端，与当前 **HTTP API** 共用契约。
 
@@ -17,6 +18,8 @@
 - **前端**：Vue 3、Vue Router、Axios；**Node** 版本以 **`myledger-h5/package.json`** 的 **`engines`** 为准（**Vite 2** 与低版本 Node 的约束见该目录说明）。
 
 ## 本地运行
+
+**API 根地址（文档、示例 curl、H5、Android 默认一致）**：`http://192.168.0.156:8080/`。
 
 ### 数据库
 
@@ -31,7 +34,11 @@ mvn spring-boot:run
 
 默认 **8080**。开发期 Maven 默认带 Spring **`dev`** profile（`application-dev.yml`，含 model 热加载等）；生产请使用 **`SPRING_PROFILES_ACTIVE=prod`**（或至少非 `dev`）。**IDEA** 运行主类时工作目录建议为 **`myledger-api`** 模块根。
 
-健康检查：`GET http://127.0.0.1:8080/api/health`。登录：`POST /api/auth/login`（返回 JWT，业务请求 `Authorization: Bearer`）；业务接口与路径见 **[docs/api-http.md](docs/api-http.md)**。数据库需含 **`ml_refresh_token`** 表（见 `docs/sql/init_schema.sql`）。
+健康检查：`GET http://192.168.0.156:8080/api/health`。登录：`POST /api/auth/login`（返回 JWT，业务请求 `Authorization: Bearer`）；业务接口与路径见 **[docs/api-http.md](docs/api-http.md)**。数据库需含 **`ml_refresh_token`** 表（见 `docs/sql/init_schema.sql`）。
+
+### Android
+
+在 **`myledger-android/`** 下用 **Android Studio** 打开工程（或已安装 Android SDK 后使用 **`gradlew assembleDebug`**）。首次请在 **`myledger-android/`** 下创建 **`local.properties`**，指定 **`sdk.dir`**（可参考 **`local.properties.example`**）。API 根地址见上文；构建值来自 **`myledger-android/gradle.properties`** 的 **`MYLEDGER_API_BASE`**。
 
 ### H5
 
@@ -41,7 +48,7 @@ npm install
 npm run dev
 ```
 
-默认 **http://127.0.0.1:5173**；**`vite.config.js`** 已 **`server.host: true`**，局域网可访问。开发期 **`VITE_API_BASE` 留空** 走代理，避免跨域。生产在 **`myledger-h5/.env.production`** 配置 **`VITE_API_BASE`**。
+默认 **http://127.0.0.1:5173**（前端开发服务，非后端 API）；**`vite.config.js`** 已 **`server.host: true`**，局域网可访问。后端 API 固定 **`VITE_API_BASE=http://192.168.0.156:8080`**，见 **`myledger-h5/.env.development`**、**`.env.production`**。
 
 若 **`npm install` 报 engines**：将 Node 升到 `package.json` 要求后再试。Windows 下 **esbuild** 异常可先结束 **node** 进程后删 **`node_modules`** 重装，或使用项目内的 **`npm run esbuild:cache`**（见 `package.json` 脚本说明）。
 
