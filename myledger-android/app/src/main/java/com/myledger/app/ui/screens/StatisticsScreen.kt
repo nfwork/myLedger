@@ -63,8 +63,10 @@ import com.myledger.app.ui.theme.Expense
 import com.myledger.app.ui.theme.Income
 import com.myledger.app.ui.theme.Muted
 import com.myledger.app.ui.theme.PrimaryDark
+import com.myledger.app.ui.theme.ScreenPadding
 import com.myledger.app.ui.theme.Surface
 import com.myledger.app.ui.theme.TextPrimary
+import com.myledger.app.ui.theme.h5Card
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Calendar
@@ -122,14 +124,14 @@ fun StatisticsScreen(onError: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(rememberScrollState())
+            .padding(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Surface)
+                .h5Card()
                 .padding(14.dp),
         ) {
             Text("月 × 分类（自然年）", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = PrimaryDark)
@@ -145,8 +147,7 @@ fun StatisticsScreen(onError: (String) -> Unit) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Surface)
+                .h5Card()
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
@@ -268,8 +269,7 @@ fun StatisticsScreen(onError: (String) -> Unit) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Surface),
+                    .h5Card(),
             ) {
                 Column(
                     modifier = Modifier
@@ -471,9 +471,9 @@ fun StatisticsScreen(onError: (String) -> Unit) {
     }
 }
 
-private val StatsMonthColW = 82.dp
-private val StatsCellW = 64.dp
-private val StatsTotalColW = 72.dp
+private val StatsMonthColW = 84.dp
+private val StatsCellW = 84.dp
+private val StatsTotalColW = 96.dp
 private val StatsHeaderRowH = 48.dp
 private val StatsBodyRowH = 44.dp
 private val StatsFooterRowH = 52.dp

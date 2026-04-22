@@ -159,8 +159,7 @@ fun AppRoot() {
             startDestination = "splash",
             modifier = Modifier
                 .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 16.dp),
+                .padding(padding),
         ) {
             composable("splash") {
                 Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {

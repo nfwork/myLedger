@@ -41,25 +41,18 @@ import com.myledger.app.ui.theme.Line
 import com.myledger.app.ui.theme.Muted
 import com.myledger.app.ui.theme.Primary
 import com.myledger.app.ui.theme.PrimaryDark
+import com.myledger.app.ui.theme.ScreenPadding
 import com.myledger.app.ui.theme.Surface
 import com.myledger.app.ui.theme.TextPrimary
+import com.myledger.app.ui.theme.h5Card
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-
-private val CardR = 16.dp
 
 private suspend fun loadAccountsRows(): List<JsonObject> =
     withContext(Dispatchers.IO) {
         AppServices.ledgerRepository.listAccounts().mapJsonObjects()
     }
-
-private fun Modifier.h5Card(): Modifier =
-    this
-        .shadow(4.dp, RoundedCornerShape(CardR), spotColor = Color(0x0F0F172A).copy(alpha = 0.06f), ambientColor = Color.Transparent)
-        .clip(RoundedCornerShape(CardR))
-        .background(Surface)
-        .border(1.dp, Line, RoundedCornerShape(CardR))
 
 @Composable
 fun AccountsScreen(
@@ -102,7 +95,7 @@ fun AccountsScreen(
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(bottom = 24.dp),
+            .padding(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         // H5 AccountsView.vue .tip.card

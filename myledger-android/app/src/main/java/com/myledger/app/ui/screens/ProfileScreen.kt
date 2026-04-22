@@ -43,7 +43,9 @@ import com.myledger.app.ui.theme.Line
 import com.myledger.app.ui.theme.Muted
 import com.myledger.app.ui.theme.Primary
 import com.myledger.app.ui.theme.PrimaryDark
+import com.myledger.app.ui.theme.ScreenPadding
 import com.myledger.app.ui.theme.Surface
+import com.myledger.app.ui.theme.h5Card
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -79,14 +81,14 @@ fun ProfileScreen(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState()),
+            .verticalScroll(rememberScrollState())
+            .padding(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Surface)
+                .h5Card()
                 .padding(16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -113,8 +115,7 @@ fun ProfileScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Surface)
+                .h5Card()
                 .padding(16.dp),
         ) {
             OutlinedTextField(
@@ -154,8 +155,7 @@ fun ProfileScreen(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Surface),
+                .h5Card(),
         ) {
             listOf(
                 "资金账户" to onAccounts,

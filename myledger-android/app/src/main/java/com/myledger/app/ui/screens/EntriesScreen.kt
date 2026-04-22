@@ -55,7 +55,9 @@ import com.myledger.app.ui.theme.Expense
 import com.myledger.app.ui.theme.Income
 import com.myledger.app.ui.theme.Muted
 import com.myledger.app.ui.theme.PrimaryDark
+import com.myledger.app.ui.theme.ScreenPadding
 import com.myledger.app.ui.theme.Surface
+import com.myledger.app.ui.theme.h5Card
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -135,14 +137,14 @@ fun EntriesScreen(
 
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
+        contentPadding = ScreenPadding,
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Surface)
+                    .h5Card()
                     .padding(vertical = 8.dp, horizontal = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -171,8 +173,7 @@ fun EntriesScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(Surface)
+                    .h5Card()
                     .padding(14.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
@@ -284,8 +285,7 @@ fun EntriesScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Surface)
+                            .h5Card()
                             .padding(14.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
@@ -329,8 +329,7 @@ private fun EntryListCard(row: JsonObject, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Surface)
+            .h5Card()
             .clickable(onClick = onClick)
             .padding(14.dp),
         verticalAlignment = Alignment.CenterVertically,

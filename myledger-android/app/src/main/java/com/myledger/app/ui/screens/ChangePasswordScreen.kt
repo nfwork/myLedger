@@ -23,7 +23,9 @@ import androidx.compose.ui.unit.dp
 import com.myledger.app.AppServices
 import com.myledger.app.ui.theme.Expense
 import com.myledger.app.ui.theme.Primary
+import com.myledger.app.ui.theme.ScreenPadding
 import com.myledger.app.ui.theme.Surface
+import com.myledger.app.ui.theme.h5Card
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -45,13 +47,12 @@ fun ChangePasswordScreen(
         modifier = Modifier
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
-            .padding(bottom = 24.dp),
+            .padding(ScreenPadding),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Surface)
+                .h5Card()
                 .padding(16.dp),
         ) {
             OutlinedTextField(
