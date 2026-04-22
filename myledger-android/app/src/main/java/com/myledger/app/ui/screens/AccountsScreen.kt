@@ -1,7 +1,10 @@
 package com.myledger.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -11,9 +14,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -21,28 +24,42 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.gson.JsonObject
 import com.myledger.app.AppServices
 import com.myledger.app.data.remote.mapJsonObjects
 import com.myledger.app.ui.theme.Expense
+import com.myledger.app.ui.theme.Line
 import com.myledger.app.ui.theme.Muted
 import com.myledger.app.ui.theme.Primary
 import com.myledger.app.ui.theme.PrimaryDark
 import com.myledger.app.ui.theme.Surface
+import com.myledger.app.ui.theme.TextPrimary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private val CardR = 16.dp
 
 private suspend fun loadAccountsRows(): List<JsonObject> =
     withContext(Dispatchers.IO) {
         AppServices.ledgerRepository.listAccounts().mapJsonObjects()
     }
+
+private fun Modifier.h5Card(): Modifier =
+    this
+        .shadow(4.dp, RoundedCornerShape(CardR), spotColor = Color(0x0F0F172A).copy(alpha = 0.06f), ambientColor = Color.Transparent)
+        .clip(RoundedCornerShape(CardR))
+        .background(Surface)
+        .border(1.dp, Line, RoundedCornerShape(CardR))
 
 @Composable
 fun AccountsScreen(
@@ -86,38 +103,39 @@ fun AccountsScreen(
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .padding(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        // H5 AccountsView.vue .tip.card
         Text(
             "资金账户表示钱所在的位置（现金、银行卡、支付宝等）；记一笔必选账户。概览、统计、流水列表可通过顶部筛选按账户查看。",
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Surface)
-                .padding(12.dp),
+                .h5Card()
+                .padding(horizontal = 16.dp, vertical = 12.dp),
             fontSize = 13.sp,
-            color = Muted,
             lineHeight = 19.sp,
+            color = Muted,
         )
+
+        // H5 .add.card：纵向字段 + 全宽主按钮
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
-                .background(Surface)
-                .padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .h5Card()
+                .padding(horizontal = 10.dp, vertical = 10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             OutlinedTextField(
                 value = newName,
                 onValueChange = { newName = it },
-                placeholder = { Text("新账户名称") },
+                placeholder = { Text("新账户名称", color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
             OutlinedTextField(
                 value = newSort,
                 onValueChange = { newSort = it.filter { c -> c.isDigit() } },
-                placeholder = { Text("排序（数字越小越靠前）") },
+                placeholder = { Text("排序（数字越小越靠前）", color = Muted) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -143,35 +161,45 @@ fun AccountsScreen(
                     }
                 },
                 enabled = !adding && newName.isNotBlank(),
+                modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Primary),
-            ) { Text("添加") }
+            ) { Text("添加", fontWeight = FontWeight.ExtraBold) }
         }
+
         if (loading) {
-            Text("加载中…", color = Muted, modifier = Modifier.padding(16.dp))
+            Text("加载中…", color = Muted, modifier = Modifier.fillMaxWidth().padding(16.dp), textAlign = TextAlign.Center)
         } else {
             rows.forEach { a ->
                 val id = a.get("id").asLong
                 val name = a.get("name")?.asString ?: ""
                 val sort = a.get("sort_order")?.asInt ?: 0
                 val def = isDefault(a)
-                if (editId == id) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Surface)
-                            .padding(12.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        OutlinedTextField(value = editName, onValueChange = { editName = it }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .h5Card()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    if (editId == id) {
                         OutlinedTextField(
-                            value = editSort,
-                            onValueChange = { editSort = it.filter { c -> c.isDigit() } },
-                            placeholder = { Text("排序") },
+                            value = editName,
+                            onValueChange = { editName = it },
                             singleLine = true,
                             modifier = Modifier.fillMaxWidth(),
                         )
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedTextField(
+                            value = editSort,
+                            onValueChange = { editSort = it.filter { c -> c.isDigit() } },
+                            placeholder = { Text("排序", color = Muted) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        Box(Modifier.fillMaxWidth()) {
+                            Row(
+                                Modifier.align(Alignment.CenterEnd),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
                             Button(
                                 onClick = {
                                     if (editName.isBlank()) {
@@ -198,84 +226,118 @@ fun AccountsScreen(
                                 },
                                 enabled = !saving,
                                 colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                            ) { Text("保存") }
-                            TextButton(onClick = { editId = null }) { Text("取消") }
+                            ) { Text("保存", fontWeight = FontWeight.ExtraBold) }
+                            OutlinedButton(onClick = { editId = null }) { Text("取消") }
+                            }
                         }
-                    }
-                } else {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Surface)
-                            .padding(14.dp),
-                    ) {
-                        Text(name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Row(modifier = Modifier.padding(top = 4.dp)) {
+                    } else {
+                        Text(name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = TextPrimary)
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            modifier = Modifier.padding(top = 2.dp),
+                        ) {
                             Text("排序 $sort", fontSize = 11.sp, color = Muted)
                             if (def) {
                                 Text(
                                     "默认",
-                                    fontSize = 10.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = PrimaryDark,
                                     modifier = Modifier
-                                        .padding(start = 6.dp)
                                         .clip(RoundedCornerShape(6.dp))
                                         .background(Primary.copy(alpha = 0.12f))
                                         .padding(horizontal = 6.dp, vertical = 2.dp),
                                 )
                             }
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.padding(top = 8.dp)) {
+                        Box(Modifier.fillMaxWidth()) {
+                            Row(
+                                Modifier.align(Alignment.CenterEnd),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
                             if (!def) {
-                                TextButton(
-                                    onClick = {
-                                        scope.launch {
-                                            try {
-                                                withContext(Dispatchers.IO) { AppServices.ledgerRepository.setDefaultAccount(id) }
-                                                onSuccess("已设为默认账户")
-                                                rows = loadAccountsRows()
-                                                withContext(Dispatchers.IO) { refreshFilterAccounts() }
-                                            } catch (e: Exception) {
-                                                onError(e.message ?: "操作失败")
-                                            }
+                                ActionPill(
+                                    label = "设为默认",
+                                    container = Color(0xFF3B82F6).copy(alpha = 0.1f),
+                                    content = Color(0xFF1D4ED8),
+                                ) {
+                                    scope.launch {
+                                        try {
+                                            withContext(Dispatchers.IO) { AppServices.ledgerRepository.setDefaultAccount(id) }
+                                            onSuccess("已设为默认账户")
+                                            rows = loadAccountsRows()
+                                            withContext(Dispatchers.IO) { refreshFilterAccounts() }
+                                        } catch (e: Exception) {
+                                            onError(e.message ?: "操作失败")
                                         }
-                                    },
-                                ) { Text("设为默认", color = Color(0xFF1D4ED8), fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                                    }
+                                }
                             }
-                            TextButton(onClick = { editId = id; editName = name; editSort = sort.toString() }) {
-                                Text("改名", color = PrimaryDark, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                            ActionPill(
+                                label = "改名",
+                                container = Primary.copy(alpha = 0.1f),
+                                content = PrimaryDark,
+                            ) {
+                                editId = id
+                                editName = name
+                                editSort = sort.toString()
                             }
                             if (!def) {
-                                TextButton(
-                                    onClick = {
-                                        scope.launch {
-                                            try {
-                                                withContext(Dispatchers.IO) { AppServices.ledgerRepository.deleteAccount(id) }
-                                                onSuccess("已删除")
-                                                rows = loadAccountsRows()
-                                                withContext(Dispatchers.IO) { refreshFilterAccounts() }
-                                            } catch (e: Exception) {
-                                                onError(e.message ?: "删除失败")
-                                            }
+                                ActionPill(
+                                    label = "删除",
+                                    container = Expense.copy(alpha = 0.08f),
+                                    content = Expense,
+                                ) {
+                                    scope.launch {
+                                        try {
+                                            withContext(Dispatchers.IO) { AppServices.ledgerRepository.deleteAccount(id) }
+                                            onSuccess("已删除")
+                                            rows = loadAccountsRows()
+                                            withContext(Dispatchers.IO) { refreshFilterAccounts() }
+                                        } catch (e: Exception) {
+                                            onError(e.message ?: "删除失败")
                                         }
-                                    },
-                                ) { Text("删除", color = Expense, fontWeight = FontWeight.Bold, fontSize = 12.sp) }
+                                    }
+                                }
+                            }
                             }
                         }
                     }
                 }
             }
             if (!loading && rows.isEmpty()) {
-                Text("暂无资金账户", color = Muted, modifier = Modifier.padding(24.dp))
+                Text(
+                    "暂无资金账户",
+                    color = Muted,
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp, horizontal = 16.dp),
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }
 }
 
+@Composable
+private fun ActionPill(
+    label: String,
+    container: Color,
+    content: Color,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(10.dp))
+            .background(container)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 9.dp, vertical = 6.dp),
+    ) {
+        Text(label, color = content, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+    }
+}
+
 private suspend fun refreshFilterAccounts() {
-    // 与 H5 refreshFilterAccounts 一致：账户列表变化后校验筛选 ID
     val arr = AppServices.ledgerRepository.listAccounts().mapJsonObjects()
     val ids = arr.map { it.get("id").asLong }.toSet()
     val cur = AppServices.accountScopeStore.getScopeAccountId()

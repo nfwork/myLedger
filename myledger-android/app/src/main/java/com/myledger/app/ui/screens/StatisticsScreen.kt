@@ -1,14 +1,18 @@
 package com.myledger.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -37,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -53,11 +58,13 @@ import com.myledger.app.domain.visibleMonthsForStats
 import com.myledger.app.ui.theme.CompactSelectFieldTextStyle
 import com.myledger.app.ui.theme.CompactSelectMenuItemPadding
 import com.myledger.app.ui.theme.CompactSelectMenuItemTextStyle
+import com.myledger.app.ui.theme.CompactSelectMenuMaxHeight
 import com.myledger.app.ui.theme.Expense
 import com.myledger.app.ui.theme.Income
 import com.myledger.app.ui.theme.Muted
 import com.myledger.app.ui.theme.PrimaryDark
 import com.myledger.app.ui.theme.Surface
+import com.myledger.app.ui.theme.TextPrimary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Calendar
@@ -75,6 +82,7 @@ fun StatisticsScreen(onError: (String) -> Unit) {
     var flatRows by remember { mutableStateOf<List<JsonObject>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var accMenu by remember { mutableStateOf(false) }
+    val tableHScroll = rememberScrollState()
 
     LaunchedEffect(selectedYear, entryType, scopeAccountId) {
         loading = true
@@ -114,8 +122,7 @@ fun StatisticsScreen(onError: (String) -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(bottom = 88.dp),
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(
@@ -155,7 +162,11 @@ fun StatisticsScreen(onError: (String) -> Unit) {
                         singleLine = true,
                         textStyle = CompactSelectFieldTextStyle,
                     )
-                    ExposedDropdownMenu(expanded = accMenu, onDismissRequest = { accMenu = false }) {
+                    ExposedDropdownMenu(
+                        expanded = accMenu,
+                        onDismissRequest = { accMenu = false },
+                        modifier = Modifier.heightIn(max = CompactSelectMenuMaxHeight),
+                    ) {
                         DropdownMenuItem(
                             text = { Text("全部账户", style = CompactSelectMenuItemTextStyle) },
                             onClick = {
@@ -179,17 +190,41 @@ fun StatisticsScreen(onError: (String) -> Unit) {
                     }
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            // 与 H5 StatisticsView.vue .type-tabs 一致：浅灰轨道 + 选中白底轻阴影
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFF0F172A).copy(alpha = 0.05f))
+                    .padding(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
                 listOf("expense" to "支出", "income" to "收入").forEach { (v, label) ->
-                    Button(
-                        onClick = { entryType = v },
-                        colors = if (entryType == v) {
-                            ButtonDefaults.buttonColors(containerColor = Surface, contentColor = PrimaryDark)
-                        } else {
-                            ButtonDefaults.buttonColors(containerColor = Color(0x0F0F172A).copy(alpha = 0.05f), contentColor = Muted)
-                        },
-                        modifier = Modifier.weight(1f),
-                    ) { Text(label, fontWeight = FontWeight.ExtraBold) }
+                    val selected = entryType == v
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(11.dp))
+                            .then(
+                                if (selected) {
+                                    Modifier
+                                        .shadow(1.dp, RoundedCornerShape(11.dp), ambientColor = Color(0x140F172A), spotColor = Color(0x140F172A))
+                                        .background(Surface)
+                                } else {
+                                    Modifier.background(Color.Transparent)
+                                },
+                            )
+                            .clickable { entryType = v }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            label,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 14.sp,
+                            color = if (selected) PrimaryDark else Muted,
+                        )
+                    }
                 }
             }
             Row(
@@ -229,6 +264,7 @@ fun StatisticsScreen(onError: (String) -> Unit) {
                 modifier = Modifier.padding(20.dp),
             )
         } else {
+            // 与 H5 表格一致：左侧月份列固定宽 + 右侧整块横向滚动；每行固定高度，避免与锁定列错位、金额换行
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -237,125 +273,224 @@ fun StatisticsScreen(onError: (String) -> Unit) {
             ) {
                 Column(
                     modifier = Modifier
-                        .width(76.dp)
-                        .background(Color(0xFFF8FAFC)),
+                        .width(StatsMonthColW)
+                        .background(StatsTableHeadBg),
                 ) {
-                    Text(
-                        "月份",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Muted,
-                        modifier = Modifier.padding(10.dp),
-                    )
-                    matrix.rows.forEachIndexed { ri, row ->
-                        val isCur = selectedYear == cy && row.ym == curYm
-                        Text(
-                            row.monthLabel,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    when {
-                                        isCur -> Color(0xFFDAF2EC)
-                                        ri % 2 == 1 -> Color(0xFFF1F5F9)
-                                        else -> Surface
-                                    },
-                                )
-                                .padding(10.dp),
-                        )
-                    }
-                    Text(
-                        "分类合计",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.ExtraBold,
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFFE6F4F2))
-                            .padding(10.dp),
-                    )
+                            .height(StatsHeaderRowH)
+                            .padding(horizontal = 10.dp),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Text(
+                            "月份",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Muted,
+                        )
+                    }
+                    matrix.rows.forEachIndexed { ri, row ->
+                        val isCur = selectedYear == cy && row.ym == curYm
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(StatsBodyRowH)
+                                .background(statsRowBg(isCur, ri % 2 == 1))
+                                .padding(horizontal = 10.dp),
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
+                            Text(
+                                row.monthLabel,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextPrimary,
+                            )
+                        }
+                    }
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(StatsFooterRowH)
+                            .background(StatsTableFootBg)
+                            .padding(horizontal = 10.dp),
+                        contentAlignment = Alignment.CenterStart,
+                    ) {
+                        Text(
+                            "分类合计",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = TextPrimary,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
                 }
-                Row(modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState())) {
+                Row(
+                    modifier = Modifier
+                        .weight(1f)
+                        .horizontalScroll(tableHScroll)
+                        .padding(end = 12.dp),
+                ) {
                     Column {
-                        Row {
+                        Row(Modifier.height(StatsHeaderRowH)) {
                             matrix.cols.forEach { c ->
+                                Box(
+                                    modifier = Modifier
+                                        .width(StatsCellW)
+                                        .fillMaxHeight(),
+                                    contentAlignment = Alignment.CenterEnd,
+                                ) {
+                                    Text(
+                                        c.name,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        softWrap = false,
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color(0xFF475569),
+                                        textAlign = TextAlign.End,
+                                        modifier = Modifier.padding(horizontal = 6.dp),
+                                    )
+                                }
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .width(StatsTotalColW)
+                                    .fillMaxHeight()
+                                    .background(StatsTotalColBg),
+                                contentAlignment = Alignment.CenterEnd,
+                            ) {
                                 Text(
-                                    c.name,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    fontSize = 10.sp,
+                                    "合计",
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF475569),
+                                    color = Color(0xFF334155),
                                     textAlign = TextAlign.End,
-                                    modifier = Modifier.width(64.dp).padding(8.dp),
+                                    modifier = Modifier.padding(horizontal = 8.dp),
                                 )
                             }
-                            Text(
-                                "合计",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.width(72.dp).padding(8.dp).background(Color(0xFFF0F9F8)),
-                                textAlign = TextAlign.End,
-                            )
                         }
                         matrix.rows.forEachIndexed { ri, row ->
                             val isCur = selectedYear == cy && row.ym == curYm
                             Row(
-                                modifier = Modifier.background(
-                                    when {
-                                        isCur -> Color(0xFFDAF2EC)
-                                        ri % 2 == 1 -> Color(0xFFF1F5F9)
-                                        else -> Surface
-                                    },
-                                ),
+                                modifier = Modifier
+                                    .height(StatsBodyRowH)
+                                    .background(statsRowBg(isCur, ri % 2 == 1)),
                             ) {
                                 row.amounts.forEach { v ->
+                                    Box(
+                                        modifier = Modifier
+                                            .width(StatsCellW)
+                                            .fillMaxHeight(),
+                                        contentAlignment = Alignment.CenterEnd,
+                                    ) {
+                                        Text(
+                                            cellMoney(v),
+                                            fontSize = 11.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = if (v == 0.0) Color(0xFF94A3B8) else numColor,
+                                            textAlign = TextAlign.End,
+                                            maxLines = 1,
+                                            softWrap = false,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier.padding(horizontal = 8.dp),
+                                        )
+                                    }
+                                }
+                                Box(
+                                    modifier = Modifier
+                                        .width(StatsTotalColW)
+                                        .fillMaxHeight()
+                                        .background(statsTotalColBodyBg(isCur, ri % 2 == 1)),
+                                    contentAlignment = Alignment.CenterEnd,
+                                ) {
+                                    Text(
+                                        cellMoney(row.rowTotal),
+                                        fontSize = 12.sp,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = numColor,
+                                        textAlign = TextAlign.End,
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(horizontal = 8.dp),
+                                    )
+                                }
+                            }
+                        }
+                        Row(
+                            modifier = Modifier
+                                .height(StatsFooterRowH)
+                                .background(StatsTableFootBg),
+                        ) {
+                            matrix.colTotals.forEach { v ->
+                                Box(
+                                    modifier = Modifier
+                                        .width(StatsCellW)
+                                        .fillMaxHeight(),
+                                    contentAlignment = Alignment.CenterEnd,
+                                ) {
                                     Text(
                                         cellMoney(v),
                                         fontSize = 11.sp,
-                                        fontWeight = FontWeight.SemiBold,
-                                        color = if (v == 0.0) Color(0xFF94A3B8) else numColor,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = numColor,
                                         textAlign = TextAlign.End,
-                                        modifier = Modifier.width(64.dp).padding(vertical = 10.dp, horizontal = 8.dp),
+                                        maxLines = 1,
+                                        softWrap = false,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.padding(horizontal = 8.dp),
                                     )
                                 }
+                            }
+                            Box(
+                                modifier = Modifier
+                                    .width(StatsTotalColW)
+                                    .fillMaxHeight()
+                                    .background(StatsTableFootBg),
+                                contentAlignment = Alignment.CenterEnd,
+                            ) {
                                 Text(
-                                    cellMoney(row.rowTotal),
+                                    cellMoney(matrix.grand),
                                     fontSize = 12.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = numColor,
                                     textAlign = TextAlign.End,
-                                    modifier = Modifier.width(72.dp).padding(10.dp).background(Color(0xFFF0F9F8)),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.padding(horizontal = 8.dp),
                                 )
                             }
-                        }
-                        Row(
-                            modifier = Modifier.background(Color(0xFFE6F4F2)),
-                        ) {
-                            matrix.colTotals.forEach { v ->
-                                Text(
-                                    cellMoney(v),
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = numColor,
-                                    textAlign = TextAlign.End,
-                                    modifier = Modifier.width(64.dp).padding(12.dp, 10.dp),
-                                )
-                            }
-                            Text(
-                                cellMoney(matrix.grand),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = numColor,
-                                textAlign = TextAlign.End,
-                                modifier = Modifier.width(72.dp).padding(12.dp, 10.dp),
-                            )
                         }
                     }
                 }
             }
         }
     }
+}
+
+private val StatsMonthColW = 82.dp
+private val StatsCellW = 64.dp
+private val StatsTotalColW = 72.dp
+private val StatsHeaderRowH = 48.dp
+private val StatsBodyRowH = 44.dp
+private val StatsFooterRowH = 52.dp
+private val StatsTableHeadBg = Color(0xFFF8FAFC)
+private val StatsTableFootBg = Color(0xFFE6F4F2)
+private val StatsTotalColBg = Color(0xFFF0F9F8)
+
+private fun statsRowBg(isCurrent: Boolean, zebra: Boolean): Color = when {
+    isCurrent -> Color(0xFFDAF2EC)
+    zebra -> Color(0xFFF1F5F9)
+    else -> Surface
+}
+
+private fun statsTotalColBodyBg(isCurrent: Boolean, zebra: Boolean): Color = when {
+    isCurrent -> StatsTotalColBg
+    zebra -> Color(0xFFE6F3F0)
+    else -> StatsTotalColBg
 }
 
 private fun cellMoney(n: Double): String {

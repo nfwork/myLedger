@@ -1,7 +1,10 @@
 package com.myledger.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,7 +16,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -24,19 +26,27 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.gson.JsonObject
 import com.myledger.app.AppServices
 import com.myledger.app.data.remote.mapJsonObjects
 import com.myledger.app.ui.theme.Expense
+import com.myledger.app.ui.theme.Line
 import com.myledger.app.ui.theme.Muted
 import com.myledger.app.ui.theme.Primary
+import com.myledger.app.ui.theme.PrimaryDark
 import com.myledger.app.ui.theme.Surface
+import com.myledger.app.ui.theme.TextPrimary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private val CardR = 16.dp
 
 @Composable
 fun CategoriesScreen(
@@ -70,41 +80,56 @@ fun CategoriesScreen(
             .fillMaxWidth()
             .verticalScroll(rememberScrollState())
             .padding(bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
+        // H5 CategoriesView.vue .tabs：白卡片内双格，选中浅青底，无整条灰轨道
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
+                .shadow(4.dp, RoundedCornerShape(CardR), spotColor = Color(0x0F0F172A).copy(alpha = 0.06f), ambientColor = Color.Transparent)
+                .clip(RoundedCornerShape(CardR))
                 .background(Surface)
+                .border(1.dp, Line, RoundedCornerShape(CardR))
                 .padding(6.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             listOf("expense" to "支出", "income" to "收入").forEach { (v, label) ->
                 val sel = tab == v
-                Button(
-                    onClick = { tab = v },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = if (sel) Primary.copy(alpha = 0.12f) else androidx.compose.ui.graphics.Color.Transparent,
-                        contentColor = if (sel) com.myledger.app.ui.theme.PrimaryDark else Muted,
-                    ),
-                ) { Text(label, fontWeight = FontWeight.ExtraBold) }
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(if (sel) Primary.copy(alpha = 0.12f) else Color.Transparent)
+                        .clickable { tab = v }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        label,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = 14.sp,
+                        color = if (sel) PrimaryDark else Muted,
+                    )
+                }
             }
         }
+
+        // H5 .add.card：横向输入 + 主色「添加」
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(16.dp))
+                .shadow(4.dp, RoundedCornerShape(CardR), spotColor = Color(0x0F0F172A).copy(alpha = 0.06f), ambientColor = Color.Transparent)
+                .clip(RoundedCornerShape(CardR))
                 .background(Surface)
-                .padding(10.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                .border(1.dp, Line, RoundedCornerShape(CardR))
+                .padding(horizontal = 10.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             OutlinedTextField(
                 value = newName,
                 onValueChange = { newName = it },
-                placeholder = { Text("新分类名称") },
+                placeholder = { Text("新分类名称", color = Muted) },
                 singleLine = true,
                 modifier = Modifier.weight(1f),
             )
@@ -131,12 +156,18 @@ fun CategoriesScreen(
                 },
                 enabled = !adding && newName.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = Primary),
-            ) { Text("添加") }
+            ) { Text("添加", fontWeight = FontWeight.ExtraBold) }
         }
+
         if (loading) {
-            Text("加载中…", color = Muted, modifier = Modifier.padding(16.dp))
+            Text("加载中…", color = Muted, modifier = Modifier.fillMaxWidth().padding(16.dp), textAlign = TextAlign.Center)
         } else if (rows.isEmpty()) {
-            Text("暂无分类", color = Muted, modifier = Modifier.padding(32.dp))
+            Text(
+                "暂无分类",
+                color = Muted,
+                modifier = Modifier.fillMaxWidth().padding(vertical = 32.dp, horizontal = 16.dp),
+                textAlign = TextAlign.Center,
+            )
         } else {
             rows.forEach { c ->
                 val id = c.get("id").asLong
@@ -145,35 +176,47 @@ fun CategoriesScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
+                        .shadow(4.dp, RoundedCornerShape(CardR), spotColor = Color(0x0F0F172A).copy(alpha = 0.06f), ambientColor = Color.Transparent)
+                        .clip(RoundedCornerShape(CardR))
                         .background(Surface)
-                        .padding(14.dp),
+                        .border(1.dp, Line, RoundedCornerShape(CardR))
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column {
-                        Text(name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text("排序 $sort", fontSize = 11.sp, color = Muted, modifier = Modifier.padding(top = 4.dp))
+                        Text(name, fontWeight = FontWeight.Bold, fontSize = 15.sp, color = TextPrimary)
+                        Text(
+                            "排序 $sort",
+                            fontSize = 11.sp,
+                            color = Muted,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
                     }
-                    TextButton(
-                        onClick = {
-                            scope.launch {
-                                try {
-                                    withContext(Dispatchers.IO) {
-                                        AppServices.ledgerRepository.deleteCategory(id)
+                    // H5 .del：浅红底圆角按钮
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(Expense.copy(alpha = 0.1f))
+                            .clickable {
+                                scope.launch {
+                                    try {
+                                        withContext(Dispatchers.IO) {
+                                            AppServices.ledgerRepository.deleteCategory(id)
+                                        }
+                                        onSuccess("已删除")
+                                        val arr = withContext(Dispatchers.IO) {
+                                            AppServices.ledgerRepository.listCategories(tab).mapJsonObjects()
+                                        }
+                                        rows = arr
+                                    } catch (e: Exception) {
+                                        onError(e.message ?: "删除失败")
                                     }
-                                    onSuccess("已删除")
-                                    val arr = withContext(Dispatchers.IO) {
-                                        AppServices.ledgerRepository.listCategories(tab).mapJsonObjects()
-                                    }
-                                    rows = arr
-                                } catch (e: Exception) {
-                                    onError(e.message ?: "删除失败")
                                 }
                             }
-                        },
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
                     ) {
-                        Text("删除", color = Expense, fontWeight = FontWeight.Bold)
+                        Text("删除", color = Expense, fontWeight = FontWeight.Bold, fontSize = 12.sp)
                     }
                 }
             }

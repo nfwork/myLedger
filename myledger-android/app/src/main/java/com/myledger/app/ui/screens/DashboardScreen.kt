@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -55,6 +56,7 @@ import com.myledger.app.domain.shiftYearMonth
 import com.myledger.app.ui.theme.CompactSelectFieldTextStyle
 import com.myledger.app.ui.theme.CompactSelectMenuItemPadding
 import com.myledger.app.ui.theme.CompactSelectMenuItemTextStyle
+import com.myledger.app.ui.theme.CompactSelectMenuMaxHeight
 import com.myledger.app.ui.theme.Expense
 import com.myledger.app.ui.theme.Income
 import com.myledger.app.ui.theme.Muted
@@ -144,8 +146,7 @@ fun DashboardScreen(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(bottom = 88.dp),
+            .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(
@@ -199,7 +200,11 @@ fun DashboardScreen(
                     singleLine = true,
                     textStyle = CompactSelectFieldTextStyle,
                 )
-                ExposedDropdownMenu(expanded = accMenu, onDismissRequest = { accMenu = false }) {
+                ExposedDropdownMenu(
+                    expanded = accMenu,
+                    onDismissRequest = { accMenu = false },
+                    modifier = Modifier.heightIn(max = CompactSelectMenuMaxHeight),
+                ) {
                     DropdownMenuItem(
                         text = { Text("全部账户", style = CompactSelectMenuItemTextStyle) },
                         onClick = {

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -49,6 +50,7 @@ import com.myledger.app.domain.shiftYearMonth
 import com.myledger.app.ui.theme.CompactSelectFieldTextStyle
 import com.myledger.app.ui.theme.CompactSelectMenuItemPadding
 import com.myledger.app.ui.theme.CompactSelectMenuItemTextStyle
+import com.myledger.app.ui.theme.CompactSelectMenuMaxHeight
 import com.myledger.app.ui.theme.Expense
 import com.myledger.app.ui.theme.Income
 import com.myledger.app.ui.theme.Muted
@@ -132,9 +134,7 @@ fun EntriesScreen(
     }
 
     LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 88.dp),
+        modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         item {
@@ -174,7 +174,7 @@ fun EntriesScreen(
                     .clip(RoundedCornerShape(16.dp))
                     .background(Surface)
                     .padding(14.dp),
-                verticalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("类型", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(end = 10.dp))
@@ -193,7 +193,11 @@ fun EntriesScreen(
                             singleLine = true,
                             textStyle = CompactSelectFieldTextStyle,
                         )
-                        ExposedDropdownMenu(expanded = typeMenu, onDismissRequest = { typeMenu = false }) {
+                        ExposedDropdownMenu(
+                            expanded = typeMenu,
+                            onDismissRequest = { typeMenu = false },
+                            modifier = Modifier.heightIn(max = CompactSelectMenuMaxHeight),
+                        ) {
                             DropdownMenuItem(
                                 text = { Text("全部", style = CompactSelectMenuItemTextStyle) },
                                 onClick = { entryType = ""; typeMenu = false },
@@ -224,7 +228,11 @@ fun EntriesScreen(
                             singleLine = true,
                             textStyle = CompactSelectFieldTextStyle,
                         )
-                        ExposedDropdownMenu(expanded = accMenu, onDismissRequest = { accMenu = false }) {
+                        ExposedDropdownMenu(
+                            expanded = accMenu,
+                            onDismissRequest = { accMenu = false },
+                            modifier = Modifier.heightIn(max = CompactSelectMenuMaxHeight),
+                        ) {
                             DropdownMenuItem(
                                 text = { Text("全部", style = CompactSelectMenuItemTextStyle) },
                                 onClick = {
@@ -253,9 +261,10 @@ fun EntriesScreen(
                     OutlinedTextField(
                         value = remarkKeyword,
                         onValueChange = { remarkKeyword = it },
-                        placeholder = { Text("搜索备注…") },
+                        placeholder = { Text("搜索备注…", fontSize = 14.sp, lineHeight = 17.sp) },
                         singleLine = true,
                         modifier = Modifier.weight(1f),
+                        textStyle = CompactSelectFieldTextStyle.copy(fontWeight = FontWeight.Normal),
                     )
                 }
                 Text("仅在当前月份流水中，对备注做模糊匹配", fontSize = 11.sp, color = Muted, modifier = Modifier.padding(start = 38.dp))

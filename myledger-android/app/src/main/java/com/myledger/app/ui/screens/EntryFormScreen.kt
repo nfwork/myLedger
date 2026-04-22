@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,6 +37,7 @@ import com.google.gson.JsonObject
 import com.myledger.app.ui.theme.CompactSelectFieldTextStyle
 import com.myledger.app.ui.theme.CompactSelectMenuItemPadding
 import com.myledger.app.ui.theme.CompactSelectMenuItemTextStyle
+import com.myledger.app.ui.theme.CompactSelectMenuMaxHeight
 import com.myledger.app.AppServices
 import com.myledger.app.data.remote.mapJsonObjects
 import com.myledger.app.ui.theme.Expense
@@ -200,7 +202,11 @@ fun EntryFormScreen(
                     singleLine = true,
                     textStyle = CompactSelectFieldTextStyle,
                 )
-                ExposedDropdownMenu(expanded = accMenu, onDismissRequest = { accMenu = false }) {
+                ExposedDropdownMenu(
+                    expanded = accMenu,
+                    onDismissRequest = { accMenu = false },
+                    modifier = Modifier.heightIn(max = CompactSelectMenuMaxHeight),
+                ) {
                     accounts.forEach { ac ->
                         val id = ac.get("id").asLong
                         val n = ac.get("name")?.asString ?: ""
@@ -228,7 +234,11 @@ fun EntryFormScreen(
                     singleLine = true,
                     textStyle = CompactSelectFieldTextStyle,
                 )
-                ExposedDropdownMenu(expanded = catMenu, onDismissRequest = { catMenu = false }) {
+                ExposedDropdownMenu(
+                    expanded = catMenu,
+                    onDismissRequest = { catMenu = false },
+                    modifier = Modifier.heightIn(max = CompactSelectMenuMaxHeight),
+                ) {
                     categories.forEach { cat ->
                         DropdownMenuItem(
                             text = { Text(cat.get("name")?.asString ?: "", style = CompactSelectMenuItemTextStyle) },

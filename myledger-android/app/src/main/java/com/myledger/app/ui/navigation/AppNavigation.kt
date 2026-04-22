@@ -2,12 +2,12 @@ package com.myledger.app.ui.navigation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Icon
@@ -16,8 +16,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -30,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavType
@@ -77,7 +76,6 @@ private fun showBack(route: String?): Boolean = when (route) {
     else -> route?.startsWith("entry_edit/") == true
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppRoot() {
     val nav = rememberNavController()
@@ -97,6 +95,7 @@ fun AppRoot() {
         containerColor = Bg,
         topBar = {
             if (title != null) {
+                // 与 H5 MainLayout.vue .page-head 接近：statusBar + 约 10dp 垂直留白，避免 Material TopAppBar 默认过高
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -108,24 +107,36 @@ fun AppRoot() {
                                     TealLight,
                                 ),
                             ),
-                        ),
+                        )
+                        .statusBarsPadding()
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
                 ) {
-                    TopAppBar(
-                        title = { Text(title, color = HeaderText, fontWeight = FontWeight.Bold, fontSize = 17.sp) },
-                        navigationIcon = {
-                            if (showBack(route)) {
-                                IconButton(onClick = { nav.popBackStack() }) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                        contentDescription = "返回",
-                                        tint = HeaderText,
-                                        modifier = Modifier.padding(start = 4.dp),
-                                    )
-                                }
-                            }
-                        },
-                        colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent),
+                    Text(
+                        title,
+                        color = HeaderText,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp,
+                        letterSpacing = 0.3.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 44.dp),
                     )
+                    if (showBack(route)) {
+                        IconButton(
+                            onClick = { nav.popBackStack() },
+                            modifier = Modifier
+                                .align(Alignment.CenterStart)
+                                .size(40.dp),
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "返回",
+                                tint = HeaderText,
+                                modifier = Modifier.size(22.dp),
+                            )
+                        }
+                    }
                 }
             }
         },
