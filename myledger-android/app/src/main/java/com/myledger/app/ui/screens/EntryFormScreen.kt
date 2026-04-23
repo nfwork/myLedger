@@ -7,21 +7,29 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,6 +65,9 @@ import com.myledger.app.ui.theme.segmentToggleClickable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.Calendar
 import java.util.Locale
 
@@ -83,7 +94,9 @@ fun EntryFormScreen(
     var accMenu by remember { mutableStateOf(false) }
     var catMenu by remember { mutableStateOf(false) }
     var showDelete by remember { mutableStateOf(false) }
+    var showDatePicker by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
+    val formScroll = rememberScrollState()
 
     fun isDefaultAccount(a: JsonObject): Boolean {
         val v = a.get("is_default") ?: a.get("isDefault") ?: return false
@@ -149,7 +162,8 @@ fun EntryFormScreen(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
+            .imePadding()
+            .verticalScroll(formScroll)
             .padding(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -204,11 +218,23 @@ fun EntryFormScreen(
             )
             OutlinedTextField(
                 value = entryDate,
-                onValueChange = { entryDate = it },
+                onValueChange = {},
+                readOnly = true,
                 label = { Text("日期") },
-                placeholder = { Text("YYYY-MM-DD") },
+                placeholder = { Text("选择日期") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
+                shape = H5EntriesFilterSelectShape,
+                colors = h5EntriesFilterTextFieldColors(),
+                trailingIcon = {
+                    IconButton(onClick = { showDatePicker = true }) {
+                        Icon(
+                            Icons.Filled.CalendarMonth,
+                            contentDescription = "选择日期",
+                            tint = Muted,
+                        )
+                    }
+                },
             )
             Text("资金账户", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             ExposedDropdownMenuBox(expanded = accMenu, onExpandedChange = { accMenu = it }, modifier = Modifier.fillMaxWidth()) {
@@ -290,19 +316,35 @@ fun EntryFormScreen(
             Button(
                 onClick = {
                     err = null
-                    if (accountId == null || categoryId == null) {
-                        err = "请选择资金账户与分类"
+                    // 与表单自上而下顺序一致：金额 → 日期 → 账户 → 分类 → 备注
+                    val amt = amount.toDoubleOrNull()
+                    if (amount.isBlank()) {
+                        err = "请输入金额"
+                        onError(err!!)
+                        return@Button
+                    }
+                    if (amt == null || amt < 0.01) {
+                        err = "请输入有效金额"
+                        onError(err!!)
+                        return@Button
+                    }
+                    validateEntryDate(entryDate)?.let { msg ->
+                        err = msg
+                        onError(msg)
+                        return@Button
+                    }
+                    if (accountId == null) {
+                        err = "请选择资金账户"
+                        onError(err!!)
+                        return@Button
+                    }
+                    if (categoryId == null) {
+                        err = "请选择分类"
                         onError(err!!)
                         return@Button
                     }
                     if (remark.trim().isEmpty()) {
                         err = "请填写备注"
-                        onError(err!!)
-                        return@Button
-                    }
-                    val amt = amount.toDoubleOrNull()
-                    if (amt == null || amt < 0.01) {
-                        err = "请输入有效金额"
                         onError(err!!)
                         return@Button
                     }
@@ -353,6 +395,27 @@ fun EntryFormScreen(
         }
     }
 
+    if (showDatePicker) {
+        val initialMillis = isoDateToUtcStartMillis(entryDate) ?: isoDateToUtcStartMillis(todayIso())!!
+        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = initialMillis)
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        datePickerState.selectedDateMillis?.let { entryDate = utcStartMillisToIsoDate(it) }
+                        showDatePicker = false
+                    },
+                ) { Text("确定") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("取消") }
+            },
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
     if (showDelete && entryId != null) {
         AlertDialog(
             onDismissRequest = { showDelete = false },
@@ -387,4 +450,29 @@ fun EntryFormScreen(
 private fun todayIso(): String {
     val c = Calendar.getInstance()
     return String.format(Locale.US, "%04d-%02d-%02d", c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH))
+}
+
+/** 非 null 表示校验失败提示文案 */
+private fun validateEntryDate(entryDate: String): String? {
+    val s = entryDate.trim()
+    if (s.isEmpty()) return "请填写日期"
+    return try {
+        LocalDate.parse(s)
+        null
+    } catch (_: Exception) {
+        "请输入有效日期"
+    }
+}
+
+/** Material DatePicker 使用 UTC 日界，与接口 YYYY-MM-DD 对齐 */
+private fun isoDateToUtcStartMillis(iso: String): Long? =
+    try {
+        LocalDate.parse(iso.trim()).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+    } catch (_: Exception) {
+        null
+    }
+
+private fun utcStartMillisToIsoDate(millis: Long): String {
+    val ld = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
+    return String.format(Locale.US, "%04d-%02d-%02d", ld.year, ld.monthValue, ld.dayOfMonth)
 }
