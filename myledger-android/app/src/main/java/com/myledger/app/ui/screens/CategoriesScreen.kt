@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -143,6 +144,31 @@ fun CategoriesScreen(
                     )
                 }
             }
+        }
+
+        // H5 CategoriesView.vue .tip.card：优化为信息盒样式
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
+                .background(Primary.copy(alpha = 0.06f))
+                .border(1.dp, Primary.copy(alpha = 0.15f), RoundedCornerShape(14.dp))
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                Icons.Filled.Info,
+                contentDescription = null,
+                tint = Primary,
+                modifier = Modifier.size(18.dp).padding(top = 1.dp)
+            )
+            Text(
+                "收支分类用于标记每一笔账目的用途（如餐饮、交通、工资等）；合理的分类有助于在首页、统计和流水中更清晰地分析财务状况。",
+                fontSize = 13.sp,
+                lineHeight = 20.sp,
+                color = PrimaryDark.copy(alpha = 0.8f),
+            )
         }
 
         // H5 .add.card：横向输入 + 主色「添加」

@@ -63,7 +63,7 @@ fun H5CompactSelectField(
                     Text(
                         text = placeholder,
                         style = CompactSelectFieldTextStyle,
-                        color = Muted.copy(alpha = 0.62f),
+                        color = Muted.copy(alpha = 0.35f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -124,7 +124,7 @@ fun H5CompactInputField(
                         Text(
                             text = placeholder,
                             style = CompactSelectFieldTextStyle,
-                            color = Muted.copy(alpha = 0.62f),
+                            color = Muted.copy(alpha = 0.35f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
@@ -156,6 +156,6 @@ fun h5EntriesFilterTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTrailingIconColor = Muted,
     unfocusedTrailingIconColor = Muted,
     disabledTrailingIconColor = Muted,
-    focusedPlaceholderColor = Muted.copy(alpha = 0.62f),
-    unfocusedPlaceholderColor = Muted.copy(alpha = 0.62f),
+    focusedPlaceholderColor = Muted.copy(alpha = 0.35f),
+    unfocusedPlaceholderColor = Muted.copy(alpha = 0.35f),
 )

@@ -32,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
@@ -300,10 +301,16 @@ fun EntryFormScreen(
                 value = remark,
                 onValueChange = { remark = it },
                 label = { Text("备注（必填）") },
-                placeholder = { Text("简要说明这笔账，便于日后按备注查找") },
+                placeholder = { Text("简要说明这笔账，便于日后按备注查找", color = Muted.copy(alpha = 0.35f)) },
                 minLines = 2,
                 maxLines = 4,
                 modifier = Modifier.fillMaxWidth(),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedLabelColor = Muted.copy(alpha = 0.6f),
+                    unfocusedPlaceholderColor = Muted.copy(alpha = 0.35f),
+                    focusedBorderColor = Primary.copy(alpha = 0.6f),
+                    unfocusedBorderColor = Line.copy(alpha = 0.15f)
+                )
             )
             err?.let { Text(it, color = Expense, fontSize = 13.sp) }
             Button(

@@ -365,10 +365,10 @@ fun EntriesScreen(
                                     Text(formatDateDisplay(date), fontWeight = FontWeight.Black, fontSize = 14.sp, color = TextPrimary)
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                                         if (dayIncome > 0) {
-                                            Text("收 ${formatMoney(dayIncome)}", color = Income, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text("收 ${formatMoney(dayIncome)}", color = Income, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                                         }
                                         if (dayExpense > 0) {
-                                            Text("支 ${formatMoney(dayExpense)}", color = Expense, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                            Text("支 ${formatMoney(dayExpense)}", color = Expense, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                                         }
                                     }
                                 }
@@ -503,8 +503,8 @@ private fun EntryListRow(row: JsonObject, onClick: () -> Unit) {
         val amt = row.optDouble("amount") ?: 0.0
         Text(
             (if (income) "+" else "−") + formatMoney(amt),
-            fontWeight = FontWeight.Black,
-            fontSize = 16.sp,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 15.sp,
             color = if (income) Income else Expense,
             textAlign = TextAlign.End
         )
