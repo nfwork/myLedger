@@ -362,17 +362,16 @@ fun StatisticsScreen(onError: (String) -> Unit) {
                             Box(
                                 modifier = Modifier
                                     .width(StatsTotalColW)
-                                    .fillMaxHeight()
-                                    .background(StatsTotalColBg),
+                                    .fillMaxHeight(),
                                 contentAlignment = Alignment.CenterEnd,
                             ) {
                                 Text(
                                     "合计",
-                                    fontSize = 11.sp,
+                                    fontSize = 10.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = Color(0xFF334155),
+                                    color = Color(0xFF475569),
                                     textAlign = TextAlign.End,
-                                    modifier = Modifier.padding(horizontal = 8.dp),
+                                    modifier = Modifier.padding(horizontal = 6.dp),
                                 )
                             }
                         }
@@ -406,15 +405,14 @@ fun StatisticsScreen(onError: (String) -> Unit) {
                                 Box(
                                     modifier = Modifier
                                         .width(StatsTotalColW)
-                                        .fillMaxHeight()
-                                        .background(statsTotalColBodyBg(isCur, ri % 2 == 1)),
+                                        .fillMaxHeight(),
                                     contentAlignment = Alignment.CenterEnd,
                                 ) {
                                     Text(
                                         cellMoney(row.rowTotal),
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = numColor,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = if (row.rowTotal == 0.0) Color(0xFF94A3B8) else numColor,
                                         textAlign = TextAlign.End,
                                         maxLines = 1,
                                         softWrap = false,
@@ -452,13 +450,12 @@ fun StatisticsScreen(onError: (String) -> Unit) {
                             Box(
                                 modifier = Modifier
                                     .width(StatsTotalColW)
-                                    .fillMaxHeight()
-                                    .background(StatsTableFootBg),
+                                    .fillMaxHeight(),
                                 contentAlignment = Alignment.CenterEnd,
                             ) {
                                 Text(
                                     cellMoney(matrix.grand),
-                                    fontSize = 12.sp,
+                                    fontSize = 11.sp,
                                     fontWeight = FontWeight.ExtraBold,
                                     color = numColor,
                                     textAlign = TextAlign.End,
@@ -478,24 +475,17 @@ fun StatisticsScreen(onError: (String) -> Unit) {
 
 private val StatsMonthColW = 84.dp
 private val StatsCellW = 84.dp
-private val StatsTotalColW = 96.dp
+private val StatsTotalColW = 84.dp
 private val StatsHeaderRowH = 48.dp
 private val StatsBodyRowH = 44.dp
 private val StatsFooterRowH = 52.dp
 private val StatsTableHeadBg = Color(0xFFF8FAFC)
 private val StatsTableFootBg = Color(0xFFE6F4F2)
-private val StatsTotalColBg = Color(0xFFF0F9F8)
 
 private fun statsRowBg(isCurrent: Boolean, zebra: Boolean): Color = when {
     isCurrent -> Color(0xFFDAF2EC)
     zebra -> Color(0xFFF1F5F9)
     else -> Surface
-}
-
-private fun statsTotalColBodyBg(isCurrent: Boolean, zebra: Boolean): Color = when {
-    isCurrent -> StatsTotalColBg
-    zebra -> Color(0xFFE6F3F0)
-    else -> StatsTotalColBg
 }
 
 private fun cellMoney(n: Double): String {

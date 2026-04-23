@@ -64,7 +64,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private fun titleFor(route: String?): String? = when (route) {
-    "dashboard" -> "概览"
+    "dashboard" -> "首页"
     "entries" -> "流水"
     "stats" -> "统计"
     "profile" -> "我的"

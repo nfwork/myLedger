@@ -100,7 +100,7 @@ fun MyBottomBar(
                 horizontalArrangement = Arrangement.SpaceEvenly,
             ) {
                 TabIcon(
-                    label = "概览",
+                    label = "首页",
                     icon = Icons.Default.Home,
                     selected = currentRoute == "dashboard",
                     onClick = onDashboard,

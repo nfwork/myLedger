@@ -259,24 +259,24 @@ fun DashboardScreen(
                         Column(
                             modifier = Modifier
                                 .weight(1f)
-                                .shadow(elevation = 8.dp, shape = RoundedCornerShape(16.dp), ambientColor = Color(0x2610B981), spotColor = Color(0x2610B981))
-                                .background(Brush.verticalGradient(listOf(Color(0xFF34D399), Color(0xFF059669))), RoundedCornerShape(16.dp))
-                                .padding(16.dp),
+                                .h5Card()
+                                .background(Income.copy(alpha = 0.12f))
+                                .padding(14.dp),
                         ) {
-                            Text("本月收入", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            Text("本月收入", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(4.dp))
-                            Text(formatMoney(totals.first), color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp)
+                            Text(formatMoney(totals.first), color = Income, fontWeight = FontWeight.Black, fontSize = 18.sp)
                         }
                         Column(
                             modifier = Modifier
                                 .weight(1f)
-                                .shadow(elevation = 8.dp, shape = RoundedCornerShape(16.dp), ambientColor = Color(0x26F43F5E), spotColor = Color(0x26F43F5E))
-                                .background(Brush.verticalGradient(listOf(Color(0xFFFB7185), Color(0xFFE11D48))), RoundedCornerShape(16.dp))
-                                .padding(16.dp),
+                                .h5Card()
+                                .background(Expense.copy(alpha = 0.12f))
+                                .padding(14.dp),
                         ) {
-                            Text("本月支出", color = Color.White.copy(alpha = 0.85f), fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                            Text("本月支出", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
                             Spacer(Modifier.height(4.dp))
-                            Text(formatMoney(totals.second), color = Color.White, fontWeight = FontWeight.Black, fontSize = 20.sp)
+                            Text(formatMoney(totals.second), color = Expense, fontWeight = FontWeight.Black, fontSize = 18.sp)
                         }
                     }
 
@@ -284,10 +284,7 @@ fun DashboardScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .h5Card()
-                            .background(Brush.horizontalGradient(
-                                if (balance >= 0) listOf(Income.copy(alpha = 0.08f), Color.Transparent)
-                                else listOf(Expense.copy(alpha = 0.08f), Color.Transparent)
-                            ), RoundedCornerShape(16.dp))
+                            .background(Brush.horizontalGradient(listOf(Primary.copy(alpha = 0.08f), Color.Transparent)))
                             .padding(horizontal = 18.dp, vertical = 16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
@@ -297,18 +294,24 @@ fun DashboardScreen(
                             Text(
                                 formatMoney(balance),
                                 fontWeight = FontWeight.Black,
-                                fontSize = 22.sp,
+                                fontSize = 24.sp, // 略微放大，使其更突出
                                 color = if (balance >= 0) Income else Expense,
                             )
                         }
+                        // 右侧盈亏勋章
                         Box(
                             modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(if (balance >= 0) Income.copy(alpha = 0.1f) else Expense.copy(alpha = 0.1f)),
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(if (balance >= 0) Income.copy(alpha = 0.12f) else Expense.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(if (balance >= 0) "盈" else "亏", color = if (balance >= 0) Income else Expense, fontWeight = FontWeight.Bold)
+                            Text(
+                                if (balance >= 0) "盈" else "亏",
+                                color = if (balance >= 0) Income else Expense,
+                                fontWeight = FontWeight.Black,
+                                fontSize = 16.sp
+                            )
                         }
                     }
 
