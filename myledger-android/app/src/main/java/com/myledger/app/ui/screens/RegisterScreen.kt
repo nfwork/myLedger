@@ -11,10 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,12 +28,15 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.myledger.app.AppServices
 import com.myledger.app.data.remote.ApiException
 import com.myledger.app.ui.theme.Bg
 import com.myledger.app.ui.theme.Expense
+import com.myledger.app.ui.theme.H5CompactInputField
 import com.myledger.app.ui.theme.Muted
 import com.myledger.app.ui.theme.Primary
 import com.myledger.app.ui.theme.Surface
@@ -93,38 +96,38 @@ fun RegisterScreen(
                 .fillMaxWidth()
                 .h5Card()
                 .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            OutlinedTextField(
+            Text("用户名", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            H5CompactInputField(
                 value = username,
                 onValueChange = { username = it.trimStart() },
-                label = { Text("用户名") },
-                placeholder = { Text("至少 4 个字符") },
-                singleLine = true,
+                placeholder = "至少 4 个字符",
                 modifier = Modifier.fillMaxWidth(),
             )
-            OutlinedTextField(
+            Text("密码", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
+            H5CompactInputField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("密码") },
-                placeholder = { Text("至少 6 位") },
-                singleLine = true,
+                placeholder = "至少 6 位",
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),
             )
-            OutlinedTextField(
+            Text("确认密码", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
+            H5CompactInputField(
                 value = password2,
                 onValueChange = { password2 = it },
-                label = { Text("确认密码") },
-                placeholder = { Text("请再次输入密码") },
-                singleLine = true,
+                placeholder = "请再次输入密码",
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),
             )
-            OutlinedTextField(
+            Text("昵称（可选）", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
+            H5CompactInputField(
                 value = nickname,
                 onValueChange = { nickname = it.trimStart() },
-                label = { Text("昵称（可选）") },
-                placeholder = { Text("显示名称") },
-                singleLine = true,
+                placeholder = "显示名称",
                 modifier = Modifier.fillMaxWidth(),
             )
             err?.let { Text(it, color = Expense, fontSize = 14.sp) }

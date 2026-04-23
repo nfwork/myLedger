@@ -2,15 +2,20 @@ package com.myledger.app.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -41,10 +46,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.gson.JsonObject
 import com.myledger.app.ui.theme.CompactSelectFieldTextStyle
+import com.myledger.app.ui.theme.CompactSelectMenuItemMinHeight
 import com.myledger.app.ui.theme.CompactSelectMenuItemPadding
 import com.myledger.app.ui.theme.CompactSelectMenuItemTextStyle
 import com.myledger.app.AppServices
@@ -57,6 +64,8 @@ import com.myledger.app.ui.theme.Primary
 import com.myledger.app.ui.theme.PrimaryDark
 import com.myledger.app.ui.theme.ScreenPadding
 import com.myledger.app.ui.theme.Surface
+import com.myledger.app.ui.theme.H5CompactInputField
+import com.myledger.app.ui.theme.H5CompactSelectField
 import com.myledger.app.ui.theme.H5EntriesFilterSelectShape
 import com.myledger.app.ui.theme.H5ExposedDropdownMenu
 import com.myledger.app.ui.theme.h5Card
@@ -208,32 +217,26 @@ fun EntryFormScreen(
                     }
                 }
             }
-            OutlinedTextField(
+            Text("金额", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            H5CompactInputField(
                 value = amount,
                 onValueChange = { amount = it.filter { c -> c.isDigit() || c == '.' } },
-                label = { Text("金额") },
-                placeholder = { Text("0.00") },
-                singleLine = true,
+                placeholder = "0.00",
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier.fillMaxWidth(),
             )
-            OutlinedTextField(
+            Text("日期", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            H5CompactSelectField(
                 value = entryDate,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("日期") },
-                placeholder = { Text("选择日期") },
-                singleLine = true,
-                modifier = Modifier.fillMaxWidth(),
-                shape = H5EntriesFilterSelectShape,
-                colors = h5EntriesFilterTextFieldColors(),
+                placeholder = "选择日期",
+                modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true },
                 trailingIcon = {
-                    IconButton(onClick = { showDatePicker = true }) {
-                        Icon(
-                            Icons.Filled.CalendarMonth,
-                            contentDescription = "选择日期",
-                            tint = Muted,
-                        )
-                    }
+                    Icon(
+                        Icons.Filled.CalendarMonth,
+                        contentDescription = "选择日期",
+                        tint = Muted,
+                        modifier = Modifier.size(20.dp)
+                    )
                 },
             )
             Text("资金账户", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
@@ -243,16 +246,10 @@ fun EntryFormScreen(
                     val n = it.get("name")?.asString ?: ""
                     if (isDefaultAccount(it)) "$n（默认）" else n
                 } ?: ""
-                OutlinedTextField(
+                H5CompactSelectField(
                     value = accLabel,
-                    onValueChange = {},
-                    readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = accMenu) },
                     modifier = Modifier.menuAnchor().fillMaxWidth(),
-                    singleLine = true,
-                    textStyle = CompactSelectFieldTextStyle,
-                    shape = H5EntriesFilterSelectShape,
-                    colors = h5EntriesFilterTextFieldColors(),
                 )
                 H5ExposedDropdownMenu(
                     expanded = accMenu,
@@ -268,24 +265,19 @@ fun EntryFormScreen(
                                 accountId = id
                                 accMenu = false
                             },
-                            contentPadding = CompactSelectMenuItemPadding,
-                        )
+                                contentPadding = CompactSelectMenuItemPadding,
+                                modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
+                            )
                     }
                 }
             }
             Text("分类", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
             ExposedDropdownMenuBox(expanded = catMenu, onExpandedChange = { catMenu = it }, modifier = Modifier.fillMaxWidth()) {
                 val c = categories.find { it.get("id").asLong == categoryId }
-                OutlinedTextField(
+                H5CompactSelectField(
                     value = c?.get("name")?.asString ?: "",
-                    onValueChange = {},
-                    readOnly = true,
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = catMenu) },
                     modifier = Modifier.menuAnchor().fillMaxWidth(),
-                    singleLine = true,
-                    textStyle = CompactSelectFieldTextStyle,
-                    shape = H5EntriesFilterSelectShape,
-                    colors = h5EntriesFilterTextFieldColors(),
                 )
                 H5ExposedDropdownMenu(
                     expanded = catMenu,
@@ -298,8 +290,9 @@ fun EntryFormScreen(
                                 categoryId = cat.get("id").asLong
                                 catMenu = false
                             },
-                            contentPadding = CompactSelectMenuItemPadding,
-                        )
+                                contentPadding = CompactSelectMenuItemPadding,
+                                modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
+                            )
                     }
                 }
             }

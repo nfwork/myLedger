@@ -19,7 +19,6 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.gson.JsonObject
 import com.myledger.app.AppServices
+import com.myledger.app.ui.theme.H5CompactInputField
 import com.myledger.app.ui.theme.Line
 import com.myledger.app.ui.theme.Muted
 import com.myledger.app.ui.theme.Primary
@@ -118,12 +118,11 @@ fun ProfileScreen(
                 .h5Card()
                 .padding(16.dp),
         ) {
-            OutlinedTextField(
+            Text("昵称", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(bottom = 6.dp))
+            H5CompactInputField(
                 value = nickname,
                 onValueChange = { nickname = it },
-                label = { Text("昵称") },
-                placeholder = { Text("显示名称") },
-                singleLine = true,
+                placeholder = "显示名称",
                 modifier = Modifier.fillMaxWidth(),
             )
             Button(

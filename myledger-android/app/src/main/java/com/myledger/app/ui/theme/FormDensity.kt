@@ -22,7 +22,10 @@ val CompactSelectMenuItemTextStyle = TextStyle(
 )
 
 /** 下拉菜单项：比 Material3 默认更紧凑 */
-val CompactSelectMenuItemPadding = PaddingValues(horizontal = 12.dp, vertical = 3.dp)
+val CompactSelectMenuItemPadding = PaddingValues(horizontal = 12.dp, vertical = 2.dp)
+
+/** 下拉菜单项最小高度 */
+val CompactSelectMenuItemMinHeight = 40.dp
 
 /** 账户等较长列表展开时的最大高度，超出部分在菜单内滚动 */
 val CompactSelectMenuMaxHeight = 240.dp

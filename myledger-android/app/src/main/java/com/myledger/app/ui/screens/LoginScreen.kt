@@ -15,7 +15,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,6 +41,7 @@ import com.myledger.app.ui.theme.Primary
 import com.myledger.app.ui.theme.PrimaryDark
 import com.myledger.app.ui.theme.Surface
 import com.myledger.app.ui.theme.TealLight
+import com.myledger.app.ui.theme.H5CompactInputField
 import com.myledger.app.ui.theme.h5Card
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -90,22 +90,20 @@ fun LoginScreen(
                 .fillMaxWidth()
                 .h5Card()
                 .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            OutlinedTextField(
+            Text("用户名", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+            H5CompactInputField(
                 value = username,
                 onValueChange = { username = it.trimStart() },
-                label = { Text("用户名") },
-                placeholder = { Text("至少 4 个字符") },
-                singleLine = true,
+                placeholder = "至少 4 个字符",
                 modifier = Modifier.fillMaxWidth(),
             )
-            OutlinedTextField(
+            Text("密码", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(top = 4.dp))
+            H5CompactInputField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text("密码") },
-                placeholder = { Text("至少 6 位") },
-                singleLine = true,
+                placeholder = "至少 6 位",
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 modifier = Modifier.fillMaxWidth(),

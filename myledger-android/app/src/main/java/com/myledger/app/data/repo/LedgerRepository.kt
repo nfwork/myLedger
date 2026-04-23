@@ -85,6 +85,12 @@ class LedgerRepository(private val client: ApiClient) {
         )
     }
 
+    suspend fun updateCategory(id: Long, name: String, sortOrder: Int?) {
+        val m = mutableMapOf<String, Any?>("id" to id, "name" to name)
+        if (sortOrder != null) m["sort_order"] = sortOrder
+        unwrapDbfound(post("/ledger_settings/category.execute!update", m))
+    }
+
     suspend fun deleteCategory(id: Long) {
         unwrapDbfound(post("/ledger_settings/category.execute!delete", mapOf("id" to id)))
     }

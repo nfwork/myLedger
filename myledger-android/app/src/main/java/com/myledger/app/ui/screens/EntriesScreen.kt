@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,8 +27,8 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -50,19 +52,22 @@ import com.myledger.app.domain.formatDateDisplay
 import com.myledger.app.domain.formatMoney
 import com.myledger.app.domain.shiftYearMonth
 import com.myledger.app.ui.theme.CompactSelectFieldTextStyle
+import com.myledger.app.ui.theme.CompactSelectMenuItemMinHeight
 import com.myledger.app.ui.theme.CompactSelectMenuItemPadding
 import com.myledger.app.ui.theme.CompactSelectMenuItemTextStyle
 import com.myledger.app.ui.theme.EntriesFilterDropdownMaxHeight
 import com.myledger.app.ui.theme.Expense
+import com.myledger.app.ui.theme.H5CompactInputField
+import com.myledger.app.ui.theme.H5CompactSelectField
 import com.myledger.app.ui.theme.H5EntriesFilterSelectShape
 import com.myledger.app.ui.theme.H5EntriesRemarkFieldShape
 import com.myledger.app.ui.theme.Income
+import com.myledger.app.ui.theme.Line
 import com.myledger.app.ui.theme.Muted
 import com.myledger.app.ui.theme.PrimaryDark
 import com.myledger.app.ui.theme.ScreenPadding
 import com.myledger.app.ui.theme.h5Card
 import com.myledger.app.ui.theme.H5ExposedDropdownMenu
-import com.myledger.app.ui.theme.h5EntriesFilterTextFieldColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -190,16 +195,10 @@ fun EntriesScreen(
                             "expense" -> "支出"
                             else -> "全部"
                         }
-                        OutlinedTextField(
+                        H5CompactSelectField(
                             value = typeLabel,
-                            onValueChange = {},
-                            readOnly = true,
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeMenu) },
                             modifier = Modifier.menuAnchor().fillMaxWidth(),
-                            singleLine = true,
-                            textStyle = CompactSelectFieldTextStyle,
-                            shape = H5EntriesFilterSelectShape,
-                            colors = h5EntriesFilterTextFieldColors(),
                         )
                         H5ExposedDropdownMenu(
                             expanded = typeMenu,
@@ -210,16 +209,19 @@ fun EntriesScreen(
                                 text = { Text("全部", style = CompactSelectMenuItemTextStyle) },
                                 onClick = { entryType = ""; typeMenu = false },
                                 contentPadding = CompactSelectMenuItemPadding,
+                                modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
                             )
                             DropdownMenuItem(
                                 text = { Text("收入", style = CompactSelectMenuItemTextStyle) },
                                 onClick = { entryType = "income"; typeMenu = false },
                                 contentPadding = CompactSelectMenuItemPadding,
+                                modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
                             )
                             DropdownMenuItem(
                                 text = { Text("支出", style = CompactSelectMenuItemTextStyle) },
                                 onClick = { entryType = "expense"; typeMenu = false },
                                 contentPadding = CompactSelectMenuItemPadding,
+                                modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
                             )
                         }
                     }
@@ -227,16 +229,10 @@ fun EntriesScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("账户", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(end = 10.dp))
                     ExposedDropdownMenuBox(expanded = accMenu, onExpandedChange = { accMenu = it }, modifier = Modifier.weight(1f)) {
-                        OutlinedTextField(
+                        H5CompactSelectField(
                             value = if (scopeAccountId == null) "全部" else accounts.find { it.first == scopeAccountId }?.second ?: "全部",
-                            onValueChange = {},
-                            readOnly = true,
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = accMenu) },
                             modifier = Modifier.menuAnchor().fillMaxWidth(),
-                            singleLine = true,
-                            textStyle = CompactSelectFieldTextStyle,
-                            shape = H5EntriesFilterSelectShape,
-                            colors = h5EntriesFilterTextFieldColors(),
                         )
                         H5ExposedDropdownMenu(
                             expanded = accMenu,
@@ -251,6 +247,7 @@ fun EntriesScreen(
                                     accMenu = false
                                 },
                                 contentPadding = CompactSelectMenuItemPadding,
+                                modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
                             )
                             accounts.forEach { (id, name) ->
                                 DropdownMenuItem(
@@ -261,6 +258,7 @@ fun EntriesScreen(
                                         accMenu = false
                                     },
                                     contentPadding = CompactSelectMenuItemPadding,
+                                    modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
                                 )
                             }
                         }
@@ -268,15 +266,12 @@ fun EntriesScreen(
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text("备注", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(end = 10.dp))
-                    OutlinedTextField(
+                    H5CompactInputField(
                         value = remarkKeyword,
                         onValueChange = { remarkKeyword = it },
-                        placeholder = { Text("搜索备注…", fontSize = 14.sp, lineHeight = 17.sp) },
-                        singleLine = true,
+                        placeholder = "搜索备注…",
                         modifier = Modifier.weight(1f),
-                        textStyle = CompactSelectFieldTextStyle.copy(fontWeight = FontWeight.Medium),
                         shape = H5EntriesRemarkFieldShape,
-                        colors = h5EntriesFilterTextFieldColors(),
                         leadingIcon = {
                             Icon(
                                 Icons.Filled.Search,
@@ -299,9 +294,7 @@ fun EntriesScreen(
                                     )
                                 }
                             }
-                        } else {
-                            null
-                        },
+                        } else null
                     )
                 }
                 Text("仅在当前月份流水中，对备注做模糊匹配", fontSize = 11.sp, color = Muted, modifier = Modifier.padding(start = 38.dp))
@@ -313,8 +306,23 @@ fun EntriesScreen(
         } else if (rows.isEmpty()) {
             item { Text("暂无流水", color = Muted, modifier = Modifier.padding(32.dp).fillMaxWidth(), fontSize = 15.sp) }
         } else {
-            items(rows, key = { it.get("id").asLong }) { row ->
-                EntryListCard(row, onClick = { onOpenEntry(row.get("id").asLong) })
+            item {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .h5Card()
+                ) {
+                    rows.forEachIndexed { index, row ->
+                        EntryListRow(row, onClick = { onOpenEntry(row.get("id").asLong) })
+                        if (index < rows.size - 1) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                thickness = 0.5.dp,
+                                color = Line.copy(alpha = 0.4f)
+                            )
+                        }
+                    }
+                }
             }
             if (total > 0) {
                 item {
@@ -360,32 +368,31 @@ fun EntriesScreen(
 }
 
 @Composable
-private fun EntryListCard(row: JsonObject, onClick: () -> Unit) {
+private fun EntryListRow(row: JsonObject, onClick: () -> Unit) {
     val income = row.get("entry_type")?.asString == "income"
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .h5Card()
             .clickable(onClick = onClick)
-            .padding(14.dp),
+            .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     if (income) "收入" else "支出",
-                    fontSize = 11.sp,
+                    fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     color = if (income) Income else Expense,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(999.dp))
-                        .background(if (income) Income.copy(alpha = 0.12f) else Expense.copy(alpha = 0.12f))
-                        .padding(horizontal = 8.dp, vertical = 3.dp),
+                        .clip(RoundedCornerShape(4.dp))
+                        .background(if (income) Income.copy(alpha = 0.1f) else Expense.copy(alpha = 0.1f))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
                 )
                 Text(
                     row.get("category_name")?.asString ?: "",
                     fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
+                    fontSize = 14.sp,
                     modifier = Modifier.padding(start = 8.dp),
                 )
             }
@@ -396,13 +403,13 @@ private fun EntryListCard(row: JsonObject, onClick: () -> Unit) {
                 if (!acc.isNullOrBlank()) append(" · ").append(acc)
                 if (!remark.isNullOrBlank()) append(" · ").append(remark)
             }
-            Text(sub, fontSize = 12.sp, color = Muted, modifier = Modifier.padding(top = 4.dp))
+            Text(sub, fontSize = 11.sp, color = Muted, modifier = Modifier.padding(top = 2.dp), maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
         }
         val amt = row.get("amount")?.takeIf { !it.isJsonNull }?.asDouble ?: 0.0
         Text(
             (if (income) "+" else "−") + formatMoney(amt),
             fontWeight = FontWeight.ExtraBold,
-            fontSize = 16.sp,
+            fontSize = 15.sp,
             color = if (income) Income else Expense,
         )
     }

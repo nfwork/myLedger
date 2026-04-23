@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,7 +29,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -54,6 +55,7 @@ import com.myledger.app.domain.currentYearMonth
 import com.myledger.app.domain.formatMoney
 import com.myledger.app.domain.visibleMonthsForStats
 import com.myledger.app.ui.theme.CompactSelectFieldTextStyle
+import com.myledger.app.ui.theme.CompactSelectMenuItemMinHeight
 import com.myledger.app.ui.theme.CompactSelectMenuItemPadding
 import com.myledger.app.ui.theme.CompactSelectMenuItemTextStyle
 import com.myledger.app.ui.theme.Expense
@@ -63,10 +65,10 @@ import com.myledger.app.ui.theme.PrimaryDark
 import com.myledger.app.ui.theme.ScreenPadding
 import com.myledger.app.ui.theme.Surface
 import com.myledger.app.ui.theme.TextPrimary
+import com.myledger.app.ui.theme.H5CompactSelectField
 import com.myledger.app.ui.theme.H5EntriesFilterSelectShape
 import com.myledger.app.ui.theme.H5ExposedDropdownMenu
 import com.myledger.app.ui.theme.h5Card
-import com.myledger.app.ui.theme.h5EntriesFilterTextFieldColors
 import com.myledger.app.ui.theme.segmentToggleClickable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -155,16 +157,10 @@ fun StatisticsScreen(onError: (String) -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("资金账户", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(end = 8.dp))
                 ExposedDropdownMenuBox(expanded = accMenu, onExpandedChange = { accMenu = it }, modifier = Modifier.weight(1f)) {
-                    OutlinedTextField(
+                    H5CompactSelectField(
                         value = if (scopeAccountId == null) "全部账户" else accounts.find { it.first == scopeAccountId }?.second ?: "全部账户",
-                        onValueChange = {},
-                        readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = accMenu) },
                         modifier = Modifier.menuAnchor().fillMaxWidth(),
-                        singleLine = true,
-                        textStyle = CompactSelectFieldTextStyle,
-                        shape = H5EntriesFilterSelectShape,
-                        colors = h5EntriesFilterTextFieldColors(),
                     )
                     H5ExposedDropdownMenu(
                         expanded = accMenu,
@@ -178,6 +174,7 @@ fun StatisticsScreen(onError: (String) -> Unit) {
                                 accMenu = false
                             },
                             contentPadding = CompactSelectMenuItemPadding,
+                            modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
                         )
                         accounts.forEach { (id, name) ->
                             DropdownMenuItem(
@@ -188,6 +185,7 @@ fun StatisticsScreen(onError: (String) -> Unit) {
                                     accMenu = false
                                 },
                                 contentPadding = CompactSelectMenuItemPadding,
+                                modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
                             )
                         }
                     }
