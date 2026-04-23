@@ -486,19 +486,21 @@ private fun EntryListRow(row: JsonObject, onClick: () -> Unit) {
             )
             val acc = row.get("account_name")?.asStringOrNull()
             val remark = row.get("remark")?.asStringOrNull()
-            val sub = buildString {
-                append(formatDateDisplay(row.get("entry_date")?.asStringOrNull()))
-                if (!acc.isNullOrBlank()) append(" · ").append(acc)
-                if (!remark.isNullOrBlank()) append(" · ").append(remark)
+            val sub = listOfNotNull(
+                acc.takeIf { !it.isNullOrBlank() },
+                remark.takeIf { !it.isNullOrBlank() }
+            ).joinToString(" · ")
+            
+            if (sub.isNotEmpty()) {
+                Text(
+                    sub,
+                    fontSize = 12.sp,
+                    color = Muted,
+                    modifier = Modifier.padding(top = 2.dp),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
-            Text(
-                sub,
-                fontSize = 12.sp,
-                color = Muted,
-                modifier = Modifier.padding(top = 2.dp),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
         }
         val amt = row.optDouble("amount") ?: 0.0
         Text(
