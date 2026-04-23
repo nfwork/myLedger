@@ -52,6 +52,7 @@ import com.myledger.app.data.remote.mapJsonObjects
 import com.myledger.app.domain.currentYearMonth
 import com.myledger.app.domain.formatDateDisplay
 import com.myledger.app.domain.formatMoney
+import com.myledger.app.domain.formatYearMonthLabel
 import com.myledger.app.domain.shiftYearMonth
 import com.myledger.app.ui.theme.CompactSelectFieldTextStyle
 import com.myledger.app.ui.theme.CompactSelectMenuItemMinHeight
@@ -170,7 +171,7 @@ fun EntriesScreen(
                 ) {
                     Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "上一月")
                 }
-                Text(yearMonth, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+                Text(formatYearMonthLabel(yearMonth), fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                 Button(
                     onClick = { yearMonth = shiftYearMonth(yearMonth, 1) },
                     modifier = Modifier.padding(start = 4.dp).size(44.dp),

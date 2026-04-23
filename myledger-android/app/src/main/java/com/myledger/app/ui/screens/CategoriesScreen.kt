@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -26,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -70,11 +72,14 @@ fun CategoriesScreen(
     var rows by remember { mutableStateOf<List<JsonObject>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
     var newName by remember { mutableStateOf("") }
+    var newSort by remember { mutableStateOf("100") }
     var adding by remember { mutableStateOf(false) }
     var editId by remember { mutableStateOf<Long?>(null) }
     var editName by remember { mutableStateOf("") }
     var editSort by remember { mutableStateOf("100") }
     var saving by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var categoryToDelete by remember { mutableStateOf<JsonObject?>(null) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(tab) {
@@ -99,21 +104,30 @@ fun CategoriesScreen(
             .padding(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        // H5 CategoriesView.vue .tabs：白卡片内双格，选中浅青底，无整条灰轨道
+        // 与 H5 StatisticsView.vue .type-tabs 一致：浅灰轨道 + 选中白底轻阴影
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .h5Card()
-                .padding(6.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                .clip(RoundedCornerShape(14.dp))
+                .background(Color(0xFF0F172A).copy(alpha = 0.05f))
+                .padding(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             listOf("expense" to "支出", "income" to "收入").forEach { (v, label) ->
                 val sel = tab == v
                 Box(
                     modifier = Modifier
                         .weight(1f)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(if (sel) Primary.copy(alpha = 0.12f) else Color.Transparent)
+                        .clip(RoundedCornerShape(11.dp))
+                        .then(
+                            if (sel) {
+                                Modifier
+                                    .shadow(1.dp, RoundedCornerShape(11.dp), ambientColor = Color(0x140F172A), spotColor = Color(0x140F172A))
+                                    .background(Surface)
+                            } else {
+                                Modifier.background(Color.Transparent)
+                            },
+                        )
                         .segmentToggleClickable { tab = v }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center,
@@ -137,21 +151,31 @@ fun CategoriesScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            H5CompactInputField(
-                value = newName,
-                onValueChange = { newName = it },
-                placeholder = "新分类名称",
-                modifier = Modifier.weight(1f),
-            )
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                H5CompactInputField(
+                    value = newName,
+                    onValueChange = { newName = it },
+                    placeholder = "新分类名称",
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                H5CompactInputField(
+                    value = newSort,
+                    onValueChange = { newSort = it.filter { c -> c.isDigit() } },
+                    placeholder = "排序 (100)",
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             Button(
                 onClick = {
                     adding = true
                     scope.launch {
                         try {
+                            val so = newSort.toIntOrNull() ?: 100
                             withContext(Dispatchers.IO) {
-                                AppServices.ledgerRepository.addCategory(newName.trim(), tab, 100)
+                                AppServices.ledgerRepository.addCategory(newName.trim(), tab, so)
                             }
                             newName = ""
+                            newSort = "100"
                             onSuccess("已添加")
                             val arr = withContext(Dispatchers.IO) {
                                 AppServices.ledgerRepository.listCategories(tab).mapJsonObjects()
@@ -165,6 +189,8 @@ fun CategoriesScreen(
                     }
                 },
                 enabled = !adding && newName.isNotBlank(),
+                modifier = Modifier.height(86.dp),
+                shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Primary),
             ) { Text("添加", fontWeight = FontWeight.ExtraBold) }
         }
@@ -288,20 +314,8 @@ fun CategoriesScreen(
 
                                     IconButton(
                                         onClick = {
-                                            scope.launch {
-                                                try {
-                                                    withContext(Dispatchers.IO) {
-                                                        AppServices.ledgerRepository.deleteCategory(id)
-                                                    }
-                                                    onSuccess("已删除")
-                                                    val arr = withContext(Dispatchers.IO) {
-                                                        AppServices.ledgerRepository.listCategories(tab).mapJsonObjects()
-                                                    }
-                                                    rows = arr
-                                                } catch (e: Exception) {
-                                                    onError(e.message ?: "删除失败")
-                                                }
-                                            }
+                                            categoryToDelete = c
+                                            showDeleteDialog = true
                                         },
                                         modifier = Modifier.size(32.dp)
                                     ) {
@@ -327,5 +341,39 @@ fun CategoriesScreen(
                 }
             }
         }
+    }
+
+    if (showDeleteDialog && categoryToDelete != null) {
+        val id = categoryToDelete!!.get("id").asLong
+        val name = categoryToDelete!!.get("name")?.asString ?: ""
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("确认删除") },
+            text = { Text("确定要删除分类「$name」吗？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        scope.launch {
+                            try {
+                                withContext(Dispatchers.IO) {
+                                    AppServices.ledgerRepository.deleteCategory(id)
+                                }
+                                onSuccess("已删除")
+                                val arr = withContext(Dispatchers.IO) {
+                                    AppServices.ledgerRepository.listCategories(tab).mapJsonObjects()
+                                }
+                                rows = arr
+                            } catch (e: Exception) {
+                                onError(e.message ?: "删除失败")
+                            }
+                        }
+                    }
+                ) { Text("删除", color = Expense) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("取消") }
+            }
+        )
     }
 }

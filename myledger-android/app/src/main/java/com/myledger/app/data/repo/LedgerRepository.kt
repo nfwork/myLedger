@@ -5,7 +5,9 @@ import com.google.gson.JsonObject
 import com.myledger.app.data.remote.ApiClient
 import com.myledger.app.data.remote.dbfoundDatas
 import com.myledger.app.data.remote.dbfoundTotalCounts
+import com.myledger.app.data.remote.mapDbfoundHttp
 import com.myledger.app.data.remote.unwrapDbfound
+import retrofit2.HttpException
 
 class LedgerRepository(private val client: ApiClient) {
 
@@ -20,7 +22,11 @@ class LedgerRepository(private val client: ApiClient) {
                 else -> jo.addProperty(k, v.toString())
             }
         }
-        return client.dbfound.post(path, jo)
+        return try {
+            client.dbfound.post(path, jo)
+        } catch (e: HttpException) {
+            throw mapDbfoundHttp(e)
+        }
     }
 
     suspend fun register(username: String, password: String, nickname: String?) {

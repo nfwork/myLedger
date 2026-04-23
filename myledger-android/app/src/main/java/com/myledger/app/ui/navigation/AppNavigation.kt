@@ -101,7 +101,10 @@ fun AppRoot() {
 
     fun navigateToTab(targetRoute: String) {
         nav.navigate(targetRoute) {
-            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+            popUpTo(nav.graph.id) {
+                inclusive = true
+                saveState = true
+            }
             launchSingleTop = true
             restoreState = true
         }

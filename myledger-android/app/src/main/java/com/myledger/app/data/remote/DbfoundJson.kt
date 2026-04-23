@@ -3,6 +3,7 @@ package com.myledger.app.data.remote
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import retrofit2.HttpException
 
 fun JsonArray.mapJsonObjects(): List<JsonObject> = (0 until size()).map { get(it).asJsonObject }
 
@@ -11,6 +12,17 @@ fun unwrapDbfound(json: JsonObject) {
     if (ok == false) {
         val msg = json.get("message")?.asString ?: json.get("msg")?.asString ?: "请求失败"
         throw ApiException(msg)
+    }
+}
+
+fun mapDbfoundHttp(e: HttpException): ApiException {
+    return try {
+        val raw = e.response()?.errorBody()?.string().orEmpty()
+        val json = com.google.gson.JsonParser.parseString(raw).asJsonObject
+        val msg = json.get("message")?.asString ?: json.get("msg")?.asString ?: "HTTP ${e.code()}"
+        ApiException(msg)
+    } catch (_: Exception) {
+        ApiException("网络请求错误 (${e.code()})")
     }
 }
 

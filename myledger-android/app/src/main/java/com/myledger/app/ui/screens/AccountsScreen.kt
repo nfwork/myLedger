@@ -20,12 +20,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -78,6 +80,8 @@ fun AccountsScreen(
     var editName by remember { mutableStateOf("") }
     var editSort by remember { mutableStateOf("100") }
     var saving by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var accountToDelete by remember { mutableStateOf<JsonObject?>(null) }
     val scope = rememberCoroutineScope()
 
     fun isDefault(a: JsonObject): Boolean {
@@ -321,16 +325,8 @@ fun AccountsScreen(
                                     if (!def) {
                                         IconButton(
                                             onClick = {
-                                                scope.launch {
-                                                    try {
-                                                        withContext(Dispatchers.IO) { AppServices.ledgerRepository.deleteAccount(id) }
-                                                        onSuccess("已删除")
-                                                        rows = loadAccountsRows()
-                                                        withContext(Dispatchers.IO) { refreshFilterAccounts() }
-                                                    } catch (e: Exception) {
-                                                        onError(e.message ?: "删除失败")
-                                                    }
-                                                }
+                                                accountToDelete = a
+                                                showDeleteDialog = true
                                             },
                                             modifier = Modifier.size(32.dp)
                                         ) {
@@ -352,6 +348,36 @@ fun AccountsScreen(
                 }
             }
         }
+    }
+
+    if (showDeleteDialog && accountToDelete != null) {
+        val id = accountToDelete!!.get("id").asLong
+        val name = accountToDelete!!.get("name")?.asString ?: ""
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            title = { Text("确认删除") },
+            text = { Text("确定要删除账户「$name」吗？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        scope.launch {
+                            try {
+                                withContext(Dispatchers.IO) { AppServices.ledgerRepository.deleteAccount(id) }
+                                onSuccess("已删除")
+                                rows = loadAccountsRows()
+                                withContext(Dispatchers.IO) { refreshFilterAccounts() }
+                            } catch (e: Exception) {
+                                onError(e.message ?: "删除失败")
+                            }
+                        }
+                    }
+                ) { Text("删除", color = Expense) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) { Text("取消") }
+            }
+        )
     }
 }
 

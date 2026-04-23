@@ -16,10 +16,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,6 +65,7 @@ fun ProfileScreen(
 ) {
     var nickname by remember { mutableStateOf("") }
     var saving by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     LaunchedEffect(user) {
@@ -189,17 +192,36 @@ fun ProfileScreen(
         }
 
         Button(
-            onClick = {
-                scope.launch {
-                    withContext(Dispatchers.IO) { AppServices.authRepository.logout() }
-                    onUserChange(null)
-                    onLogout()
-                }
-            },
+            onClick = { showLogoutDialog = true },
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = PrimaryDark),
         ) {
             Text("退出登录")
         }
+    }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("确认退出") },
+            text = { Text("确定要退出登录吗？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        scope.launch {
+                            try {
+                                withContext(Dispatchers.IO) { AppServices.authRepository.logout() }
+                            } catch (_: Exception) { }
+                            onUserChange(null)
+                            onLogout()
+                        }
+                    }
+                ) { Text("退出", color = Color(0xFFEF4444)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showLogoutDialog = false }) { Text("取消") }
+            }
+        )
     }
 }
