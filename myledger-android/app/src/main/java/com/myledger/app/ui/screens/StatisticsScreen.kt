@@ -1,7 +1,6 @@
 package com.myledger.app.ui.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -58,7 +56,6 @@ import com.myledger.app.domain.visibleMonthsForStats
 import com.myledger.app.ui.theme.CompactSelectFieldTextStyle
 import com.myledger.app.ui.theme.CompactSelectMenuItemPadding
 import com.myledger.app.ui.theme.CompactSelectMenuItemTextStyle
-import com.myledger.app.ui.theme.CompactSelectMenuMaxHeight
 import com.myledger.app.ui.theme.Expense
 import com.myledger.app.ui.theme.Income
 import com.myledger.app.ui.theme.Muted
@@ -66,7 +63,11 @@ import com.myledger.app.ui.theme.PrimaryDark
 import com.myledger.app.ui.theme.ScreenPadding
 import com.myledger.app.ui.theme.Surface
 import com.myledger.app.ui.theme.TextPrimary
+import com.myledger.app.ui.theme.H5EntriesFilterSelectShape
+import com.myledger.app.ui.theme.H5ExposedDropdownMenu
 import com.myledger.app.ui.theme.h5Card
+import com.myledger.app.ui.theme.h5EntriesFilterTextFieldColors
+import com.myledger.app.ui.theme.segmentToggleClickable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.Calendar
@@ -162,11 +163,12 @@ fun StatisticsScreen(onError: (String) -> Unit) {
                         modifier = Modifier.menuAnchor().fillMaxWidth(),
                         singleLine = true,
                         textStyle = CompactSelectFieldTextStyle,
+                        shape = H5EntriesFilterSelectShape,
+                        colors = h5EntriesFilterTextFieldColors(),
                     )
-                    ExposedDropdownMenu(
+                    H5ExposedDropdownMenu(
                         expanded = accMenu,
                         onDismissRequest = { accMenu = false },
-                        modifier = Modifier.heightIn(max = CompactSelectMenuMaxHeight),
                     ) {
                         DropdownMenuItem(
                             text = { Text("全部账户", style = CompactSelectMenuItemTextStyle) },
@@ -215,7 +217,7 @@ fun StatisticsScreen(onError: (String) -> Unit) {
                                     Modifier.background(Color.Transparent)
                                 },
                             )
-                            .clickable { entryType = v }
+                            .segmentToggleClickable { entryType = v }
                             .padding(vertical = 10.dp),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -333,7 +335,12 @@ fun StatisticsScreen(onError: (String) -> Unit) {
                         .padding(end = 12.dp),
                 ) {
                     Column {
-                        Row(Modifier.height(StatsHeaderRowH)) {
+                        // 与 H5 .matrix thead th 一致：整行表头底 #f8fafc，合计列再由 .total-col 叠 #f0f9f8
+                        Row(
+                            Modifier
+                                .height(StatsHeaderRowH)
+                                .background(StatsTableHeadBg),
+                        ) {
                             matrix.cols.forEach { c ->
                                 Box(
                                     modifier = Modifier

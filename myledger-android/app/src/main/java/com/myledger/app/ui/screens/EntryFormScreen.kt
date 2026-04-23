@@ -1,11 +1,12 @@
 package com.myledger.app.ui.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
@@ -37,16 +39,21 @@ import com.google.gson.JsonObject
 import com.myledger.app.ui.theme.CompactSelectFieldTextStyle
 import com.myledger.app.ui.theme.CompactSelectMenuItemPadding
 import com.myledger.app.ui.theme.CompactSelectMenuItemTextStyle
-import com.myledger.app.ui.theme.CompactSelectMenuMaxHeight
 import com.myledger.app.AppServices
 import com.myledger.app.data.remote.mapJsonObjects
+import com.myledger.app.ui.theme.Bg
 import com.myledger.app.ui.theme.Expense
+import com.myledger.app.ui.theme.Line
 import com.myledger.app.ui.theme.Muted
 import com.myledger.app.ui.theme.Primary
 import com.myledger.app.ui.theme.PrimaryDark
 import com.myledger.app.ui.theme.ScreenPadding
 import com.myledger.app.ui.theme.Surface
+import com.myledger.app.ui.theme.H5EntriesFilterSelectShape
+import com.myledger.app.ui.theme.H5ExposedDropdownMenu
 import com.myledger.app.ui.theme.h5Card
+import com.myledger.app.ui.theme.h5EntriesFilterTextFieldColors
+import com.myledger.app.ui.theme.segmentToggleClickable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -157,18 +164,34 @@ fun EntryFormScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            // 与 H5 EntryFormView.vue .toggle 一致：独立描边按钮，选中时主色描边 + 浅主色底
             Text("类型", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                val shape = RoundedCornerShape(12.dp)
                 listOf("expense" to "支出", "income" to "收入").forEach { (v, label) ->
-                    OutlinedButton(
-                        onClick = { switchEntryType(v) },
-                        modifier = Modifier.weight(1f),
-                        colors = if (entryType == v) {
-                            ButtonDefaults.outlinedButtonColors(contentColor = PrimaryDark)
-                        } else {
-                            ButtonDefaults.outlinedButtonColors(contentColor = Muted)
-                        },
-                    ) { Text(label) }
+                    val selected = entryType == v
+                    val borderColor = if (selected) Primary.copy(alpha = 0.45f) else Line
+                    val segmentBg = if (selected) Primary.copy(alpha = 0.12f) else Bg
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(shape)
+                            .background(segmentBg, shape)
+                            .border(1.dp, borderColor, shape)
+                            .segmentToggleClickable { switchEntryType(v) }
+                            .padding(vertical = 9.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            text = label,
+                            color = if (selected) PrimaryDark else Muted,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                        )
+                    }
                 }
             }
             OutlinedTextField(
@@ -202,11 +225,12 @@ fun EntryFormScreen(
                     modifier = Modifier.menuAnchor().fillMaxWidth(),
                     singleLine = true,
                     textStyle = CompactSelectFieldTextStyle,
+                    shape = H5EntriesFilterSelectShape,
+                    colors = h5EntriesFilterTextFieldColors(),
                 )
-                ExposedDropdownMenu(
+                H5ExposedDropdownMenu(
                     expanded = accMenu,
                     onDismissRequest = { accMenu = false },
-                    modifier = Modifier.heightIn(max = CompactSelectMenuMaxHeight),
                 ) {
                     accounts.forEach { ac ->
                         val id = ac.get("id").asLong
@@ -234,11 +258,12 @@ fun EntryFormScreen(
                     modifier = Modifier.menuAnchor().fillMaxWidth(),
                     singleLine = true,
                     textStyle = CompactSelectFieldTextStyle,
+                    shape = H5EntriesFilterSelectShape,
+                    colors = h5EntriesFilterTextFieldColors(),
                 )
-                ExposedDropdownMenu(
+                H5ExposedDropdownMenu(
                     expanded = catMenu,
                     onDismissRequest = { catMenu = false },
-                    modifier = Modifier.heightIn(max = CompactSelectMenuMaxHeight),
                 ) {
                     categories.forEach { cat ->
                         DropdownMenuItem(

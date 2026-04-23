@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +15,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -24,6 +25,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,14 +52,17 @@ import com.myledger.app.domain.shiftYearMonth
 import com.myledger.app.ui.theme.CompactSelectFieldTextStyle
 import com.myledger.app.ui.theme.CompactSelectMenuItemPadding
 import com.myledger.app.ui.theme.CompactSelectMenuItemTextStyle
-import com.myledger.app.ui.theme.CompactSelectMenuMaxHeight
+import com.myledger.app.ui.theme.EntriesFilterDropdownMaxHeight
 import com.myledger.app.ui.theme.Expense
+import com.myledger.app.ui.theme.H5EntriesFilterSelectShape
+import com.myledger.app.ui.theme.H5EntriesRemarkFieldShape
 import com.myledger.app.ui.theme.Income
 import com.myledger.app.ui.theme.Muted
 import com.myledger.app.ui.theme.PrimaryDark
 import com.myledger.app.ui.theme.ScreenPadding
-import com.myledger.app.ui.theme.Surface
 import com.myledger.app.ui.theme.h5Card
+import com.myledger.app.ui.theme.H5ExposedDropdownMenu
+import com.myledger.app.ui.theme.h5EntriesFilterTextFieldColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -193,11 +198,13 @@ fun EntriesScreen(
                             modifier = Modifier.menuAnchor().fillMaxWidth(),
                             singleLine = true,
                             textStyle = CompactSelectFieldTextStyle,
+                            shape = H5EntriesFilterSelectShape,
+                            colors = h5EntriesFilterTextFieldColors(),
                         )
-                        ExposedDropdownMenu(
+                        H5ExposedDropdownMenu(
                             expanded = typeMenu,
                             onDismissRequest = { typeMenu = false },
-                            modifier = Modifier.heightIn(max = CompactSelectMenuMaxHeight),
+                            maxHeight = EntriesFilterDropdownMaxHeight,
                         ) {
                             DropdownMenuItem(
                                 text = { Text("全部", style = CompactSelectMenuItemTextStyle) },
@@ -228,11 +235,13 @@ fun EntriesScreen(
                             modifier = Modifier.menuAnchor().fillMaxWidth(),
                             singleLine = true,
                             textStyle = CompactSelectFieldTextStyle,
+                            shape = H5EntriesFilterSelectShape,
+                            colors = h5EntriesFilterTextFieldColors(),
                         )
-                        ExposedDropdownMenu(
+                        H5ExposedDropdownMenu(
                             expanded = accMenu,
                             onDismissRequest = { accMenu = false },
-                            modifier = Modifier.heightIn(max = CompactSelectMenuMaxHeight),
+                            maxHeight = EntriesFilterDropdownMaxHeight,
                         ) {
                             DropdownMenuItem(
                                 text = { Text("全部", style = CompactSelectMenuItemTextStyle) },
@@ -265,7 +274,34 @@ fun EntriesScreen(
                         placeholder = { Text("搜索备注…", fontSize = 14.sp, lineHeight = 17.sp) },
                         singleLine = true,
                         modifier = Modifier.weight(1f),
-                        textStyle = CompactSelectFieldTextStyle.copy(fontWeight = FontWeight.Normal),
+                        textStyle = CompactSelectFieldTextStyle.copy(fontWeight = FontWeight.Medium),
+                        shape = H5EntriesRemarkFieldShape,
+                        colors = h5EntriesFilterTextFieldColors(),
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Search,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = Muted.copy(alpha = 0.88f),
+                            )
+                        },
+                        trailingIcon = if (remarkKeyword.isNotEmpty()) {
+                            {
+                                IconButton(
+                                    onClick = { remarkKeyword = "" },
+                                    modifier = Modifier.size(40.dp),
+                                ) {
+                                    Icon(
+                                        Icons.Filled.Close,
+                                        contentDescription = "清空备注筛选",
+                                        modifier = Modifier.size(18.dp),
+                                        tint = Color(0xE6475677),
+                                    )
+                                }
+                            }
+                        } else {
+                            null
+                        },
                     )
                 }
                 Text("仅在当前月份流水中，对备注做模糊匹配", fontSize = 11.sp, color = Muted, modifier = Modifier.padding(start = 38.dp))

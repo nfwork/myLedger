@@ -44,6 +44,7 @@ import com.myledger.app.ui.theme.ScreenPadding
 import com.myledger.app.ui.theme.Surface
 import com.myledger.app.ui.theme.TextPrimary
 import com.myledger.app.ui.theme.h5Card
+import com.myledger.app.ui.theme.segmentToggleClickable
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -98,7 +99,7 @@ fun CategoriesScreen(
                         .weight(1f)
                         .clip(RoundedCornerShape(12.dp))
                         .background(if (sel) Primary.copy(alpha = 0.12f) else Color.Transparent)
-                        .clickable { tab = v }
+                        .segmentToggleClickable { tab = v }
                         .padding(vertical = 10.dp),
                     contentAlignment = Alignment.Center,
                 ) {

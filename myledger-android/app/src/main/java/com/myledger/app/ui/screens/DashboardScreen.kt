@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -56,14 +55,15 @@ import com.myledger.app.domain.shiftYearMonth
 import com.myledger.app.ui.theme.CompactSelectFieldTextStyle
 import com.myledger.app.ui.theme.CompactSelectMenuItemPadding
 import com.myledger.app.ui.theme.CompactSelectMenuItemTextStyle
-import com.myledger.app.ui.theme.CompactSelectMenuMaxHeight
 import com.myledger.app.ui.theme.Expense
 import com.myledger.app.ui.theme.Income
 import com.myledger.app.ui.theme.Muted
 import com.myledger.app.ui.theme.PrimaryDark
 import com.myledger.app.ui.theme.ScreenPadding
-import com.myledger.app.ui.theme.Surface
+import com.myledger.app.ui.theme.H5EntriesFilterSelectShape
+import com.myledger.app.ui.theme.H5ExposedDropdownMenu
 import com.myledger.app.ui.theme.h5Card
+import com.myledger.app.ui.theme.h5EntriesFilterTextFieldColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -200,11 +200,12 @@ fun DashboardScreen(
                     modifier = Modifier.menuAnchor().fillMaxWidth(),
                     singleLine = true,
                     textStyle = CompactSelectFieldTextStyle,
+                    shape = H5EntriesFilterSelectShape,
+                    colors = h5EntriesFilterTextFieldColors(),
                 )
-                ExposedDropdownMenu(
+                H5ExposedDropdownMenu(
                     expanded = accMenu,
                     onDismissRequest = { accMenu = false },
-                    modifier = Modifier.heightIn(max = CompactSelectMenuMaxHeight),
                 ) {
                     DropdownMenuItem(
                         text = { Text("全部账户", style = CompactSelectMenuItemTextStyle) },
