@@ -1,5 +1,7 @@
 package com.myledger.app.ui.navigation
 
+import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,10 +29,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.widget.Toast
+import android.app.Activity
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -81,7 +86,10 @@ fun AppRoot() {
     val nav = rememberNavController()
     val snack = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var user by remember { mutableStateOf<JsonObject?>(null) }
+    var lastBackPressTime by remember { mutableStateOf(0L) }
+
     val backStack by nav.currentBackStackEntryAsState()
     val route = backStack?.destination?.route
     val title = titleFor(route)
@@ -89,6 +97,14 @@ fun AppRoot() {
 
     fun snackMsg(msg: String) {
         scope.launch { snack.showSnackbar(msg) }
+    }
+
+    fun navigateToTab(targetRoute: String) {
+        nav.navigate(targetRoute) {
+            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+            launchSingleTop = true
+            restoreState = true
+        }
     }
 
     Scaffold(
@@ -144,16 +160,28 @@ fun AppRoot() {
             if (bottomVisible) {
                 MyBottomBar(
                     currentRoute = route,
-                    onDashboard = { nav.navigate("dashboard") { launchSingleTop = true } },
-                    onEntries = { nav.navigate("entries") { launchSingleTop = true } },
+                    onDashboard = { navigateToTab("dashboard") },
+                    onEntries = { navigateToTab("entries") },
                     onNewEntry = { nav.navigate("entry_new") },
-                    onStats = { nav.navigate("stats") { launchSingleTop = true } },
-                    onProfile = { nav.navigate("profile") { launchSingleTop = true } },
+                    onStats = { navigateToTab("stats") },
+                    onProfile = { navigateToTab("profile") },
                 )
             }
         },
         snackbarHost = { SnackbarHost(snack) },
     ) { padding ->
+        val isTopLevelRoute = route in setOf("dashboard", "entries", "stats", "profile", "login")
+
+        BackHandler(enabled = isTopLevelRoute) {
+            val currentTime = System.currentTimeMillis()
+            if (currentTime - lastBackPressTime < 2000) {
+                (context as? Activity)?.finish()
+            } else {
+                lastBackPressTime = currentTime
+                Toast.makeText(context, "再按一次退出应用", Toast.LENGTH_SHORT).show()
+            }
+        }
+
         NavHost(
             navController = nav,
             startDestination = "splash",
@@ -199,7 +227,7 @@ fun AppRoot() {
             }
             composable("dashboard") {
                 DashboardScreen(
-                    onSeeAllEntries = { nav.navigate("entries") },
+                    onSeeAllEntries = { navigateToTab("entries") },
                     onError = { snackMsg(it) },
                 )
             }

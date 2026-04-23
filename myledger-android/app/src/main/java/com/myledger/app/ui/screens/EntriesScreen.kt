@@ -21,8 +21,10 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -64,6 +66,7 @@ import com.myledger.app.ui.theme.H5EntriesRemarkFieldShape
 import com.myledger.app.ui.theme.Income
 import com.myledger.app.ui.theme.Line
 import com.myledger.app.ui.theme.Muted
+import com.myledger.app.ui.theme.Primary
 import com.myledger.app.ui.theme.PrimaryDark
 import com.myledger.app.ui.theme.ScreenPadding
 import com.myledger.app.ui.theme.h5Card
@@ -314,7 +317,7 @@ fun EntriesScreen(
                 ) {
                     rows.forEachIndexed { index, row ->
                         EntryListRow(row, onClick = { onOpenEntry(row.get("id").asLong) })
-                        if (index < rows.size - 1) {
+                        if (index < rows.size - 1 || rows.size < total) {
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
                                 thickness = 0.5.dp,
@@ -322,43 +325,53 @@ fun EntriesScreen(
                             )
                         }
                     }
-                }
-            }
-            if (total > 0) {
-                item {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .h5Card()
-                            .padding(14.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text("已显示 ${rows.size} / $total 条", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+
+                    if (total > 0) {
                         if (rows.size < total) {
-                            OutlinedButton(
-                                onClick = {
-                                    loadingMore = true
-                                    scope.launch {
-                                        try {
-                                            val (arr, n) = withContext(Dispatchers.IO) {
-                                                AppServices.ledgerRepository.entryListPage(queryBody(rows.size))
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable(enabled = !loadingMore) {
+                                        loadingMore = true
+                                        scope.launch {
+                                            try {
+                                                val (arr, n) = withContext(Dispatchers.IO) {
+                                                    AppServices.ledgerRepository.entryListPage(queryBody(rows.size))
+                                                }
+                                                rows = rows + arr.mapJsonObjects()
+                                                total = n
+                                            } catch (e: Exception) {
+                                                onError(e.message ?: "加载更多失败")
+                                            } finally {
+                                                loadingMore = false
                                             }
-                                            rows = rows + arr.mapJsonObjects()
-                                            total = n
-                                        } catch (e: Exception) {
-                                            onError(e.message ?: "加载更多失败")
-                                        } finally {
-                                            loadingMore = false
                                         }
                                     }
-                                },
-                                enabled = !loadingMore,
-                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                                    .padding(vertical = 12.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(if (loadingMore) "加载中…" else "加载更多", color = PrimaryDark, fontWeight = FontWeight.ExtraBold)
+                                if (loadingMore) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(14.dp),
+                                        strokeWidth = 2.dp,
+                                        color = Primary
+                                    )
+                                    Text(" 加载中…", color = Primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                } else {
+                                    Text("查看更多 (已加载 ${rows.size}/$total)", color = Primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                                }
                             }
                         } else {
-                            Text("已加载全部", color = Muted, fontSize = 12.sp, modifier = Modifier.padding(top = 6.dp))
+                            Text(
+                                "已显示全部 $total 条流水",
+                                color = Muted,
+                                fontSize = 11.sp,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 12.dp),
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
                         }
                     }
                 }
