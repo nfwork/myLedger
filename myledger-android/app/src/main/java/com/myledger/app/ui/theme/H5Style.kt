@@ -15,12 +15,12 @@ val RadiusCard = 16.dp
 val RadiusButton = 12.dp
 val RadiusInput = 12.dp
 
-/** H5 规范中的阴影 (0 4px 24px rgb(15 23 42 / 0.06)) */
+/** H5 规范中的阴影 (更柔和的现代阴影) */
 fun Modifier.h5Shadow(): Modifier = this.shadow(
-    elevation = 8.dp, // 稍微大一点以模拟 24px 的模糊效果
+    elevation = 4.dp,
     shape = RoundedCornerShape(RadiusCard),
     clip = false,
-    spotColor = Color(0xFF0F172A).copy(alpha = 0.08f),
+    spotColor = Color(0xFF0F172A).copy(alpha = 0.05f),
     ambientColor = Color.Transparent
 )
 
@@ -29,8 +29,8 @@ fun Modifier.h5Card(): Modifier = this
     .h5Shadow()
     .clip(RoundedCornerShape(RadiusCard))
     .background(Surface)
-    .border(1.dp, Color.White.copy(alpha = 0.8f), RoundedCornerShape(RadiusCard)) // H5 有一个淡白边框
-    .border(1.dp, Line.copy(alpha = 0.5f), RoundedCornerShape(RadiusCard)) // 叠一层淡淡的 Teal 边框
+    .border(0.5.dp, Color(0xFF0D9488).copy(alpha = 0.08f), RoundedCornerShape(RadiusCard))
+
 
 /** H5 页面根部外边距 */
 val ScreenPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)

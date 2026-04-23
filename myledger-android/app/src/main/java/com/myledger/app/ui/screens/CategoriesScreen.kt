@@ -46,7 +46,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.gson.JsonObject
 import com.myledger.app.AppServices
+import com.myledger.app.data.remote.asStringOrNull
 import com.myledger.app.data.remote.mapJsonObjects
+import com.myledger.app.data.remote.optLong
+import com.myledger.app.data.remote.optString
 import com.myledger.app.ui.theme.Expense
 import com.myledger.app.ui.theme.H5CompactInputField
 import com.myledger.app.ui.theme.Line
@@ -212,9 +215,9 @@ fun CategoriesScreen(
                     .h5Card()
             ) {
                 rows.forEachIndexed { index, c ->
-                    val id = c.get("id").asLong
-                    val name = c.get("name")?.asString ?: ""
-                    val sort = c.get("sort_order")?.asInt ?: 0
+                    val id = c.optLong("id") ?: 0L
+                    val name = c.optString("name") ?: ""
+                    val sort = c.get("sort_order")?.takeIf { !it.isJsonNull }?.asInt ?: 0
                     
                     Column(
                         modifier = Modifier
@@ -344,8 +347,8 @@ fun CategoriesScreen(
     }
 
     if (showDeleteDialog && categoryToDelete != null) {
-        val id = categoryToDelete!!.get("id").asLong
-        val name = categoryToDelete!!.get("name")?.asString ?: ""
+        val id = categoryToDelete!!.optLong("id") ?: 0L
+        val name = categoryToDelete!!.optString("name") ?: ""
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("确认删除") },

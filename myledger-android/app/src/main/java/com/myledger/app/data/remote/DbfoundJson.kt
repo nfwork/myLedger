@@ -8,9 +8,9 @@ import retrofit2.HttpException
 fun JsonArray.mapJsonObjects(): List<JsonObject> = (0 until size()).map { get(it).asJsonObject }
 
 fun unwrapDbfound(json: JsonObject) {
-    val ok = json.get("success")?.takeIf { it.isJsonPrimitive }?.asBoolean
+    val ok = json.get("success")?.takeIf { it.isJsonPrimitive && !it.isJsonNull }?.asBoolean
     if (ok == false) {
-        val msg = json.get("message")?.asString ?: json.get("msg")?.asString ?: "请求失败"
+        val msg = json.get("message")?.asStringOrNull() ?: json.get("msg")?.asStringOrNull() ?: "请求失败"
         throw ApiException(msg)
     }
 }
@@ -18,9 +18,14 @@ fun unwrapDbfound(json: JsonObject) {
 fun mapDbfoundHttp(e: HttpException): ApiException {
     return try {
         val raw = e.response()?.errorBody()?.string().orEmpty()
-        val json = com.google.gson.JsonParser.parseString(raw).asJsonObject
-        val msg = json.get("message")?.asString ?: json.get("msg")?.asString ?: "HTTP ${e.code()}"
-        ApiException(msg)
+        val json = com.google.gson.JsonParser.parseString(raw)
+        if (json.isJsonObject) {
+            val jo = json.asJsonObject
+            val msg = jo.get("message")?.asStringOrNull() ?: jo.get("msg")?.asStringOrNull() ?: "HTTP ${e.code()}"
+            ApiException(msg)
+        } else {
+            ApiException("接口异常 (${e.code()})")
+        }
     } catch (_: Exception) {
         ApiException("网络请求错误 (${e.code()})")
     }
@@ -40,7 +45,7 @@ fun dbfoundDatas(json: JsonObject): JsonArray {
 
 fun dbfoundTotalCounts(json: JsonObject): Int {
     val t = json.get("total_counts") ?: json.get("totalCounts")
-    return if (t != null && t.isJsonPrimitive && t.asJsonPrimitive.isNumber) {
+    return if (t != null && t.isJsonPrimitive && t.asJsonPrimitive.isNumber && !t.isJsonNull) {
         t.asInt
     } else {
         -1

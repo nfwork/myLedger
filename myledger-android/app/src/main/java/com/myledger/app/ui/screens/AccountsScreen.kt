@@ -20,6 +20,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -46,7 +47,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.gson.JsonObject
 import com.myledger.app.AppServices
+import com.myledger.app.data.remote.asStringOrNull
 import com.myledger.app.data.remote.mapJsonObjects
+import com.myledger.app.data.remote.optLong
+import com.myledger.app.data.remote.optString
 import com.myledger.app.ui.theme.Expense
 import com.myledger.app.ui.theme.H5CompactInputField
 import com.myledger.app.ui.theme.Line
@@ -112,17 +116,30 @@ fun AccountsScreen(
             .padding(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
-        // H5 AccountsView.vue .tip.card
-        Text(
-            "资金账户表示钱所在的位置（现金、银行卡、支付宝等）；记一笔必选账户。概览、统计、流水列表可通过顶部筛选按账户查看。",
+        // H5 AccountsView.vue .tip.card：优化为信息盒样式
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .h5Card()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            fontSize = 13.sp,
-            lineHeight = 19.sp,
-            color = Muted,
-        )
+                .clip(RoundedCornerShape(14.dp))
+                .background(Primary.copy(alpha = 0.06f))
+                .border(1.dp, Primary.copy(alpha = 0.15f), RoundedCornerShape(14.dp))
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.Top,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Icon(
+                Icons.Filled.Info,
+                contentDescription = null,
+                tint = Primary,
+                modifier = Modifier.size(18.dp).padding(top = 1.dp)
+            )
+            Text(
+                "资金账户表示钱所在的位置（现金、银行卡、支付宝等）；记一笔必选账户。概览、统计、流水列表可通过顶部筛选按账户查看。",
+                fontSize = 13.sp,
+                lineHeight = 20.sp,
+                color = PrimaryDark.copy(alpha = 0.8f),
+            )
+        }
 
         // H5 .add.card：横向布局，更紧凑
         Row(
@@ -197,9 +214,9 @@ fun AccountsScreen(
                     .h5Card()
             ) {
                 rows.forEachIndexed { index, a ->
-                    val id = a.get("id").asLong
-                    val name = a.get("name")?.asString ?: ""
-                    val sort = a.get("sort_order")?.asInt ?: 0
+                    val id = a.optLong("id") ?: 0L
+                    val name = a.optString("name") ?: ""
+                    val sort = a.get("sort_order")?.takeIf { !it.isJsonNull }?.asInt ?: 0
                     val def = isDefault(a)
 
                     Column(
@@ -351,8 +368,8 @@ fun AccountsScreen(
     }
 
     if (showDeleteDialog && accountToDelete != null) {
-        val id = accountToDelete!!.get("id").asLong
-        val name = accountToDelete!!.get("name")?.asString ?: ""
+        val id = accountToDelete!!.optLong("id") ?: 0L
+        val name = accountToDelete!!.optString("name") ?: ""
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("确认删除") },
@@ -401,7 +418,7 @@ private fun ActionIconPill(
 
 private suspend fun refreshFilterAccounts() {
     val arr = AppServices.ledgerRepository.listAccounts().mapJsonObjects()
-    val ids = arr.map { it.get("id").asLong }.toSet()
+    val ids = arr.map { it.optLong("id") ?: 0L }.toSet()
     val cur = AppServices.accountScopeStore.getScopeAccountId()
     if (cur != null && cur !in ids) {
         AppServices.accountScopeStore.setScopeAccountId(null)

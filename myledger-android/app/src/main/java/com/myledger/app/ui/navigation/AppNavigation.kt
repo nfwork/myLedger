@@ -134,8 +134,8 @@ fun AppRoot() {
                         title,
                         color = HeaderText,
                         fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        letterSpacing = 0.3.sp,
+                        fontSize = 18.sp,
+                        letterSpacing = 0.5.sp,
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .fillMaxWidth()
