@@ -21,7 +21,7 @@ dbfound:
     open-session: false
   datasource:
     db0:
-      url: jdbc:mysql://127.0.0.1:3306/myledger?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      url: jdbc:mysql://127.0.0.1:8306/myledger?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
       username: dbfound
       password: dbfound
       driver-class-name: com.mysql.cj.jdbc.Driver
