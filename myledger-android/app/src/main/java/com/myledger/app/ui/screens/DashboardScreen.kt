@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -42,8 +41,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.gson.JsonObject
@@ -77,8 +79,12 @@ import com.myledger.app.ui.theme.H5ExposedDropdownMenu
 import com.myledger.app.ui.theme.h5Card
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 private const val TOP_CATEGORIES = 8
+
+private fun formatCategorySharePct(pct: Float): String =
+    String.format(Locale.US, "%.1f%%", pct.coerceIn(0f, 100f))
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -162,8 +168,8 @@ fun DashboardScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(Primary.copy(alpha = 0.04f))
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)
+                .padding(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // 月份选择器
             Row(
@@ -205,10 +211,10 @@ fun DashboardScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .h5Card()
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                    .padding(horizontal = 16.dp, vertical = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("资金账户", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 8.dp))
+                Text("资金账户", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 10.dp))
                 ExposedDropdownMenuBox(expanded = accMenu, onExpandedChange = { accMenu = it }, modifier = Modifier.weight(1f)) {
                     H5CompactSelectField(
                         value = if (scopeAccountId == null) "全部账户" else accounts.find { it.first == scopeAccountId }?.second ?: "全部账户",
@@ -252,21 +258,10 @@ fun DashboardScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .padding(start = 16.dp, top = 6.dp, end = 16.dp, bottom = 14.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-                        Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .h5Card()
-                                .background(Income.copy(alpha = 0.12f))
-                                .padding(14.dp),
-                        ) {
-                            Text("本月收入", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
-                            Spacer(Modifier.height(4.dp))
-                            Text(formatMoney(totals.first), color = Income, fontWeight = FontWeight.Black, fontSize = 18.sp)
-                        }
                         Column(
                             modifier = Modifier
                                 .weight(1f)
@@ -278,6 +273,17 @@ fun DashboardScreen(
                             Spacer(Modifier.height(4.dp))
                             Text(formatMoney(totals.second), color = Expense, fontWeight = FontWeight.Black, fontSize = 18.sp)
                         }
+                        Column(
+                            modifier = Modifier
+                                .weight(1f)
+                                .h5Card()
+                                .background(Income.copy(alpha = 0.12f))
+                                .padding(14.dp),
+                        ) {
+                            Text("本月收入", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            Spacer(Modifier.height(4.dp))
+                            Text(formatMoney(totals.first), color = Income, fontWeight = FontWeight.Black, fontSize = 18.sp)
+                        }
                     }
 
                     Row(
@@ -285,24 +291,31 @@ fun DashboardScreen(
                             .fillMaxWidth()
                             .h5Card()
                             .background(Brush.horizontalGradient(listOf(Primary.copy(alpha = 0.08f), Color.Transparent)))
-                            .padding(horizontal = 18.dp, vertical = 16.dp),
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Column {
-                            Text("本月结余", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text("本月结余", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, maxLines = 1)
                             Text(
                                 formatMoney(balance),
+                                modifier = Modifier.weight(1f),
                                 fontWeight = FontWeight.Black,
-                                fontSize = 24.sp, // 略微放大，使其更突出
+                                fontSize = 17.sp,
                                 color = if (balance >= 0) Income else Expense,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
-                        // 右侧盈亏勋章
                         Box(
                             modifier = Modifier
-                                .size(44.dp)
-                                .clip(RoundedCornerShape(14.dp))
+                                .padding(start = 8.dp)
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(12.dp))
                                 .background(if (balance >= 0) Income.copy(alpha = 0.12f) else Expense.copy(alpha = 0.12f)),
                             contentAlignment = Alignment.Center
                         ) {
@@ -310,7 +323,7 @@ fun DashboardScreen(
                                 if (balance >= 0) "盈" else "亏",
                                 color = if (balance >= 0) Income else Expense,
                                 fontWeight = FontWeight.Black,
-                                fontSize = 16.sp
+                                fontSize = 14.sp
                             )
                         }
                     }
@@ -432,8 +445,40 @@ private fun CategoryCard(
         rows.forEach { c ->
             val name = c.get("category_name")?.asString ?: c.get("categoryName")?.asString ?: "—"
             val amt = catAmount(c)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(name, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f), fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            val sharePct = barPct(amt, whole)
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val nameWithShare = buildAnnotatedString {
+                    withStyle(
+                        SpanStyle(
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 14.sp,
+                        ),
+                    ) {
+                        append(name)
+                    }
+                    if (whole > 0) {
+                        withStyle(
+                            SpanStyle(
+                                color = PrimaryDark.copy(alpha = 0.78f),
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 13.sp,
+                            ),
+                        ) {
+                            append("(${formatCategorySharePct(sharePct)})")
+                        }
+                    }
+                }
+                Text(
+                    nameWithShare,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
                 Text(formatMoney(amt), color = amtColor, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
             }
             Spacer(Modifier.height(4.dp))
