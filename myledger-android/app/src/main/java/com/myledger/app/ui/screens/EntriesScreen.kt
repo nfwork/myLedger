@@ -324,7 +324,7 @@ fun EntriesScreen(
             LazyColumn(
                 modifier = Modifier.fillMaxWidth(),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 if (loading) {
                     item {
@@ -358,7 +358,7 @@ fun EntriesScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .background(Color(0xFF0F172A).copy(alpha = 0.02f))
-                                        .padding(horizontal = 14.dp, vertical = 10.dp),
+                                        .padding(horizontal = 14.dp, vertical = 8.dp),
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
@@ -459,7 +459,7 @@ private fun EntryListRow(row: JsonObject, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(

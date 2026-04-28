@@ -78,6 +78,8 @@ import com.myledger.app.ui.theme.H5EntriesFilterSelectShape
 import com.myledger.app.ui.theme.H5ExposedDropdownMenu
 import com.myledger.app.ui.theme.h5Card
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import java.util.Locale
 
@@ -85,6 +87,12 @@ private const val TOP_CATEGORIES = 8
 
 private fun formatCategorySharePct(pct: Float): String =
     String.format(Locale.US, "%.1f%%", pct.coerceIn(0f, 100f))
+
+private data class CategoryRowUiModel(
+    val amountText: String,
+    val nameWithShare: androidx.compose.ui.text.AnnotatedString,
+    val sharePct: Float,
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,8 +112,7 @@ fun DashboardScreen(
     var loading by remember { mutableStateOf(true) }
     var accMenu by remember { mutableStateOf(false) }
 
-    LaunchedEffect(yearMonth, scopeAccountId) {
-        loading = true
+    LaunchedEffect(Unit) {
         try {
             val accList = withContext(Dispatchers.IO) {
                 AppServices.ledgerRepository.listAccounts().mapJsonObjects()
@@ -113,29 +120,46 @@ fun DashboardScreen(
             accounts = accList.map {
                 (it.optLong("id") ?: 0L) to (it.optString("name") ?: "")
             }
+        } catch (e: Exception) {
+            onError(e.message ?: "账户加载失败")
+        }
+    }
+
+    LaunchedEffect(yearMonth, scopeAccountId) {
+        loading = true
+        try {
             val aid = scopeAccountId
-            val tRow = withContext(Dispatchers.IO) {
-                AppServices.ledgerRepository.monthTotals(yearMonth, aid)
+            val queryParams = buildMap<String, Any> {
+                put("year_month", yearMonth)
+                put("start", 0)
+                put("limit", 8)
+                if (aid != null) {
+                    put("account_id", aid)
+                }
+            }
+            val (tRow, recentArr, ex, incat) = coroutineScope {
+                val totalsDeferred = async(Dispatchers.IO) {
+                    AppServices.ledgerRepository.monthTotals(yearMonth, aid)
+                }
+                val recentDeferred = async(Dispatchers.IO) {
+                    AppServices.ledgerRepository.entryList(queryParams).mapJsonObjects()
+                }
+                val expenseDeferred = async(Dispatchers.IO) {
+                    AppServices.ledgerRepository.categoryTotals(yearMonth, "expense", aid).mapJsonObjects()
+                }
+                val incomeDeferred = async(Dispatchers.IO) {
+                    AppServices.ledgerRepository.categoryTotals(yearMonth, "income", aid).mapJsonObjects()
+                }
+                Quadruple(
+                    totalsDeferred.await(),
+                    recentDeferred.await(),
+                    expenseDeferred.await(),
+                    incomeDeferred.await(),
+                )
             }
             val inc = tRow.get("income_total")?.takeIf { !it.isJsonNull }?.asDouble ?: 0.0
             val exp = tRow.get("expense_total")?.takeIf { !it.isJsonNull }?.asDouble ?: 0.0
             totals = inc to exp
-            val recentArr = withContext(Dispatchers.IO) {
-                AppServices.ledgerRepository.entryList(
-                    buildMap {
-                        put("year_month", yearMonth)
-                        put("start", 0)
-                        put("limit", 8)
-                        if (aid != null) put("account_id", aid)
-                    },
-                ).mapJsonObjects()
-            }
-            val ex = withContext(Dispatchers.IO) {
-                AppServices.ledgerRepository.categoryTotals(yearMonth, "expense", aid).mapJsonObjects()
-            }
-            val incat = withContext(Dispatchers.IO) {
-                AppServices.ledgerRepository.categoryTotals(yearMonth, "income", aid).mapJsonObjects()
-            }
             recent = recentArr
             expenseCats = ex
             incomeCats = incat
@@ -151,14 +175,24 @@ fun DashboardScreen(
     }
 
     val balance = totals.first - totals.second
-    val expenseMonthTotal = expenseCats.sumOf { catAmount(it) }
-    val incomeMonthTotal = incomeCats.sumOf { catAmount(it) }
     fun barPct(part: Double, whole: Double): Float {
         if (whole <= 0 || part <= 0) return 0f
         return ((part / whole) * 100).toFloat().coerceIn(0f, 100f)
     }
-    val expenseRows = expenseCats.filter { catAmount(it) > 0 }.take(TOP_CATEGORIES)
-    val incomeRows = incomeCats.filter { catAmount(it) > 0 }.take(TOP_CATEGORIES)
+    val expenseMonthTotal = remember(expenseCats) { expenseCats.sumOf(::catAmount) }
+    val incomeMonthTotal = remember(incomeCats) { incomeCats.sumOf(::catAmount) }
+    val expenseRows = remember(expenseCats, expenseMonthTotal) {
+        expenseCats.toCategoryUiRows(
+            whole = expenseMonthTotal,
+            barPct = ::barPct,
+        )
+    }
+    val incomeRows = remember(incomeCats, incomeMonthTotal) {
+        incomeCats.toCategoryUiRows(
+            whole = incomeMonthTotal,
+            barPct = ::barPct,
+        )
+    }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -338,9 +372,7 @@ fun DashboardScreen(
                                 title = "支出分类",
                                 hint = "占本月支出",
                                 rows = expenseRows,
-                                whole = expenseMonthTotal,
                                 isIncome = false,
-                                barPct = ::barPct,
                             )
                         }
                         if (incomeRows.isNotEmpty()) {
@@ -348,9 +380,7 @@ fun DashboardScreen(
                                 title = "收入分类",
                                 hint = "占本月收入",
                                 rows = incomeRows,
-                                whole = incomeMonthTotal,
                                 isIncome = true,
-                                barPct = ::barPct,
                             )
                         }
 
@@ -376,7 +406,7 @@ fun DashboardScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .h5Card()
-                                .padding(vertical = 4.dp),
+                                .padding(vertical = 2.dp),
                         ) {
                             if (recent.isEmpty()) {
                                 Text(
@@ -392,7 +422,7 @@ fun DashboardScreen(
                                         Spacer(
                                             Modifier
                                                 .fillMaxWidth()
-                                                .padding(horizontal = 16.dp)
+                                                .padding(horizontal = 14.dp)
                                                 .height(1.dp)
                                                 .background(Line.copy(alpha = 0.3f)),
                                         )
@@ -424,10 +454,8 @@ fun DashboardScreen(
 private fun CategoryCard(
     title: String,
     hint: String,
-    rows: List<JsonObject>,
-    whole: Double,
+    rows: List<CategoryRowUiModel>,
     isIncome: Boolean,
-    barPct: (Double, Double) -> Float,
 ) {
     val barColor = if (isIncome) Brush.horizontalGradient(listOf(Color(0xFF34D399), Income)) else Brush.horizontalGradient(listOf(Color(0xFFFB7185), Expense))
     val amtColor = if (isIncome) Income else Expense
@@ -442,51 +470,74 @@ private fun CategoryCard(
             Text(hint, fontSize = 11.sp, color = Muted, fontWeight = FontWeight.SemiBold)
         }
         Spacer(Modifier.height(10.dp))
-        rows.forEach { c ->
-            val name = c.get("category_name")?.asString ?: c.get("categoryName")?.asString ?: "—"
-            val amt = catAmount(c)
-            val sharePct = barPct(amt, whole)
+        rows.forEach { row ->
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val nameWithShare = buildAnnotatedString {
-                    withStyle(
-                        SpanStyle(
-                            color = TextPrimary,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 14.sp,
-                        ),
-                    ) {
-                        append(name)
-                    }
-                    if (whole > 0) {
-                        withStyle(
-                            SpanStyle(
-                                color = PrimaryDark.copy(alpha = 0.78f),
-                                fontWeight = FontWeight.SemiBold,
-                                fontSize = 13.sp,
-                            ),
-                        ) {
-                            append("(${formatCategorySharePct(sharePct)})")
-                        }
-                    }
-                }
                 Text(
-                    nameWithShare,
+                    row.nameWithShare,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.weight(1f),
                 )
-                Text(formatMoney(amt), color = amtColor, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
+                Text(row.amountText, color = amtColor, fontWeight = FontWeight.ExtraBold, fontSize = 13.sp)
             }
             Spacer(Modifier.height(4.dp))
-            HorizontalBarTrack(barPct(amt, whole), barColor)
+            HorizontalBarTrack(row.sharePct, barColor)
             Spacer(Modifier.height(10.dp))
         }
     }
 }
+
+private fun List<JsonObject>.toCategoryUiRows(
+    whole: Double,
+    barPct: (Double, Double) -> Float,
+): List<CategoryRowUiModel> = asSequence()
+    .map { row ->
+        val name = row.get("category_name")?.asString ?: row.get("categoryName")?.asString ?: "—"
+        val amount = catAmount(row)
+        Triple(name, amount, barPct(amount, whole))
+    }
+    .filter { (_, amount, _) -> amount > 0 }
+    .take(TOP_CATEGORIES)
+    .map { (name, amount, sharePct) ->
+        CategoryRowUiModel(
+            amountText = formatMoney(amount),
+            nameWithShare = buildAnnotatedString {
+                withStyle(
+                    SpanStyle(
+                        color = TextPrimary,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                    ),
+                ) {
+                    append(name)
+                }
+                if (whole > 0) {
+                    withStyle(
+                        SpanStyle(
+                            color = PrimaryDark.copy(alpha = 0.78f),
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 13.sp,
+                        ),
+                    ) {
+                        append("(${formatCategorySharePct(sharePct)})")
+                    }
+                }
+            },
+            sharePct = sharePct,
+        )
+    }
+    .toList()
+
+private data class Quadruple<A, B, C, D>(
+    val first: A,
+    val second: B,
+    val third: C,
+    val fourth: D,
+)
 
 @Composable
 private fun HorizontalBarTrack(pct: Float, brush: Brush) {
@@ -520,7 +571,7 @@ private fun RecentEntryRow(row: JsonObject) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
