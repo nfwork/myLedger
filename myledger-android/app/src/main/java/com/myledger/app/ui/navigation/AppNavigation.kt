@@ -3,11 +3,17 @@ package com.myledger.app.ui.navigation
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material.icons.Icons
@@ -27,6 +33,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -34,7 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import android.widget.Toast
+import androidx.compose.foundation.layout.widthIn
 import android.app.Activity
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -57,8 +64,11 @@ import com.myledger.app.ui.screens.RegisterScreen
 import com.myledger.app.ui.screens.StatisticsScreen
 import com.myledger.app.ui.theme.Bg
 import com.myledger.app.ui.theme.HeaderText
+import com.myledger.app.ui.theme.Primary
 import com.myledger.app.ui.theme.PrimaryDark
+import com.myledger.app.ui.theme.Surface
 import com.myledger.app.ui.theme.TealLight
+import com.myledger.app.ui.theme.TextPrimary
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -114,7 +124,7 @@ fun AppRoot() {
         containerColor = Bg,
         topBar = {
             if (title != null) {
-                // 与 H5 MainLayout.vue .page-head 接近：statusBar + 约 10dp 垂直留白，避免 Material TopAppBar 默认过高
+                // 固定标题栏内容高度，避免有无返回按钮时顶部高度抖动。
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -127,33 +137,44 @@ fun AppRoot() {
                                 ),
                             ),
                         )
-                        .statusBarsPadding()
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                        .statusBarsPadding(),
                 ) {
-                    Text(
-                        title,
-                        color = HeaderText,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 18.sp,
-                        letterSpacing = 0.5.sp,
-                        textAlign = TextAlign.Center,
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 44.dp),
-                    )
-                    if (showBack(route)) {
-                        IconButton(
-                            onClick = { nav.popBackStack() },
+                            .height(52.dp)
+                            .padding(horizontal = 12.dp),
+                    ) {
+                        Text(
+                            title,
+                            color = HeaderText,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 18.sp,
+                            letterSpacing = 0.5.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier
+                                .align(Alignment.Center)
+                                .fillMaxWidth()
+                                .padding(horizontal = 44.dp),
+                        )
+                        Box(
                             modifier = Modifier
                                 .align(Alignment.CenterStart)
                                 .size(40.dp),
                         ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = "返回",
-                                tint = HeaderText,
-                                modifier = Modifier.size(22.dp),
-                            )
+                            if (showBack(route)) {
+                                IconButton(
+                                    onClick = { nav.popBackStack() },
+                                    modifier = Modifier.fillMaxSize(),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                        contentDescription = "返回",
+                                        tint = HeaderText,
+                                        modifier = Modifier.size(22.dp),
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -171,7 +192,6 @@ fun AppRoot() {
                 )
             }
         },
-        snackbarHost = { SnackbarHost(snack) },
     ) { padding ->
         val isTopLevelRoute = route in setOf("dashboard", "entries", "stats", "profile", "login")
 
@@ -181,117 +201,159 @@ fun AppRoot() {
                 (context as? Activity)?.finish()
             } else {
                 lastBackPressTime = currentTime
-                Toast.makeText(context, "再按一次退出应用", Toast.LENGTH_SHORT).show()
+                snackMsg("再按一次退出应用")
             }
         }
 
-        NavHost(
-            navController = nav,
-            startDestination = "splash",
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding),
         ) {
-            composable("splash") {
-                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-                LaunchedEffect(Unit) {
-                    val u = withContext(Dispatchers.IO) { AppServices.authRepository.bootstrapUser() }
-                    user = u
-                    if (u != null) {
-                        nav.navigate("dashboard") { popUpTo("splash") { inclusive = true } }
-                    } else {
-                        nav.navigate("login") { popUpTo("splash") { inclusive = true } }
+            NavHost(
+                navController = nav,
+                startDestination = "splash",
+                modifier = Modifier.fillMaxSize(),
+            ) {
+                composable("splash") {
+                    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                    LaunchedEffect(Unit) {
+                        val u = withContext(Dispatchers.IO) { AppServices.authRepository.bootstrapUser() }
+                        user = u
+                        if (u != null) {
+                            nav.navigate("dashboard") { popUpTo("splash") { inclusive = true } }
+                        } else {
+                            nav.navigate("login") { popUpTo("splash") { inclusive = true } }
+                        }
                     }
                 }
+                composable("login") {
+                    LoginScreen(
+                        onLoggedIn = {
+                            scope.launch {
+                                user = withContext(Dispatchers.IO) { AppServices.authRepository.fetchMe() }
+                            }
+                            nav.navigate("dashboard") {
+                                popUpTo("login") { inclusive = true }
+                            }
+                        },
+                        onRegister = { nav.navigate("register") },
+                        onError = { snackMsg(it) },
+                    )
+                }
+                composable("register") {
+                    RegisterScreen(
+                        onDone = { nav.popBackStack() },
+                        onLogin = { nav.popBackStack() },
+                        onError = { snackMsg(it) },
+                        onSuccess = { snackMsg(it) },
+                    )
+                }
+                composable("dashboard") {
+                    DashboardScreen(
+                        onSeeAllEntries = { navigateToTab("entries") },
+                        onError = { snackMsg(it) },
+                    )
+                }
+                composable("entries") {
+                    EntriesScreen(
+                        onOpenEntry = { id -> nav.navigate("entry_edit/$id") },
+                        onError = { snackMsg(it) },
+                    )
+                }
+                composable("entry_new") {
+                    EntryFormScreen(
+                        entryId = null,
+                        onDone = { navigateToTab("entries") },
+                        onError = { snackMsg(it) },
+                        onSuccess = { snackMsg(it) },
+                    )
+                }
+                composable(
+                    "entry_edit/{id}",
+                    arguments = listOf(navArgument("id") { type = NavType.LongType }),
+                ) { entry ->
+                    val id = entry.arguments?.getLong("id")
+                    EntryFormScreen(
+                        entryId = id,
+                        onDone = { navigateToTab("entries") },
+                        onError = { snackMsg(it) },
+                        onSuccess = { snackMsg(it) },
+                    )
+                }
+                composable("stats") {
+                    StatisticsScreen(onError = { snackMsg(it) })
+                }
+                composable("profile") {
+                    ProfileScreen(
+                        user = user,
+                        onUserChange = { user = it },
+                        onAccounts = { nav.navigate("accounts") },
+                        onCategories = { nav.navigate("categories") },
+                        onPassword = { nav.navigate("password") },
+                        onLogout = {
+                            user = null
+                            nav.navigate("login") {
+                                popUpTo(nav.graph.id) { inclusive = true }
+                            }
+                        },
+                        onError = { snackMsg(it) },
+                        onSuccess = { snackMsg(it) },
+                    )
+                }
+                composable("categories") {
+                    CategoriesScreen(onError = { snackMsg(it) }, onSuccess = { snackMsg(it) })
+                }
+                composable("accounts") {
+                    AccountsScreen(onError = { snackMsg(it) }, onSuccess = { snackMsg(it) })
+                }
+                composable("password") {
+                    ChangePasswordScreen(
+                        onDone = { nav.popBackStack() },
+                        onError = { snackMsg(it) },
+                        onSuccess = { snackMsg(it) },
+                    )
+                }
             }
-            composable("login") {
-                LoginScreen(
-                    onLoggedIn = {
-                        scope.launch {
-                            user = withContext(Dispatchers.IO) { AppServices.authRepository.fetchMe() }
-                        }
-                        nav.navigate("dashboard") {
-                            popUpTo("login") { inclusive = true }
-                        }
-                    },
-                    onRegister = { nav.navigate("register") },
-                    onError = { snackMsg(it) },
-                )
-            }
-            composable("register") {
-                RegisterScreen(
-                    onDone = { nav.popBackStack() },
-                    onLogin = { nav.popBackStack() },
-                    onError = { snackMsg(it) },
-                    onSuccess = { snackMsg(it) },
-                )
-            }
-            composable("dashboard") {
-                DashboardScreen(
-                    onSeeAllEntries = { navigateToTab("entries") },
-                    onError = { snackMsg(it) },
-                )
-            }
-            composable("entries") {
-                EntriesScreen(
-                    onOpenEntry = { id -> nav.navigate("entry_edit/$id") },
-                    onError = { snackMsg(it) },
-                )
-            }
-            composable("entry_new") {
-                EntryFormScreen(
-                    entryId = null,
-                    onDone = { nav.popBackStack() },
-                    onError = { snackMsg(it) },
-                    onSuccess = { snackMsg(it) },
-                )
-            }
-            composable(
-                "entry_edit/{id}",
-                arguments = listOf(navArgument("id") { type = NavType.LongType }),
-            ) { entry ->
-                val id = entry.arguments?.getLong("id")
-                EntryFormScreen(
-                    entryId = id,
-                    onDone = { nav.popBackStack() },
-                    onError = { snackMsg(it) },
-                    onSuccess = { snackMsg(it) },
-                )
-            }
-            composable("stats") {
-                StatisticsScreen(onError = { snackMsg(it) })
-            }
-            composable("profile") {
-                ProfileScreen(
-                    user = user,
-                    onUserChange = { user = it },
-                    onAccounts = { nav.navigate("accounts") },
-                    onCategories = { nav.navigate("categories") },
-                    onPassword = { nav.navigate("password") },
-                    onLogout = {
-                        user = null
-                        nav.navigate("login") {
-                            popUpTo(nav.graph.id) { inclusive = true }
-                        }
-                    },
-                    onError = { snackMsg(it) },
-                    onSuccess = { snackMsg(it) },
-                )
-            }
-            composable("categories") {
-                CategoriesScreen(onError = { snackMsg(it) }, onSuccess = { snackMsg(it) })
-            }
-            composable("accounts") {
-                AccountsScreen(onError = { snackMsg(it) }, onSuccess = { snackMsg(it) })
-            }
-            composable("password") {
-                ChangePasswordScreen(
-                    onDone = { nav.popBackStack() },
-                    onError = { snackMsg(it) },
-                    onSuccess = { snackMsg(it) },
-                )
+
+            SnackbarHost(
+                hostState = snack,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
+            ) { data ->
+                Box(
+                    modifier = Modifier
+                        .widthIn(max = 420.dp)
+                        .shadow(
+                            elevation = 12.dp,
+                            shape = RoundedCornerShape(18.dp),
+                            ambientColor = PrimaryDark.copy(alpha = 0.08f),
+                            spotColor = PrimaryDark.copy(alpha = 0.12f),
+                        )
+                        .border(1.dp, Color(0xFFD8DEE6), RoundedCornerShape(18.dp))
+                        .background(Color(0xFFF2F4F7), RoundedCornerShape(18.dp))
+                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(Primary, CircleShape),
+                        )
+                        Text(
+                            text = data.visuals.message,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = TextPrimary,
+                        )
+                    }
+                }
             }
         }
     }

@@ -105,6 +105,7 @@ fun EntryFormScreen(
     var catMenu by remember { mutableStateOf(false) }
     var showDelete by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var showPostSaveChoice by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val formScroll = rememberScrollState()
 
@@ -167,6 +168,12 @@ fun EntryFormScreen(
                     ?: cats.firstOrNull()?.get("id")?.asLong
             } catch (_: Exception) { }
         }
+    }
+
+    fun prepareForNextEntry() {
+        amount = ""
+        remark = ""
+        err = null
     }
 
     Column(
@@ -363,11 +370,11 @@ fun EntryFormScreen(
                                 body["id"] = entryId
                                 withContext(Dispatchers.IO) { AppServices.ledgerRepository.updateEntry(body) }
                                 onSuccess("已保存")
+                                onDone()
                             } else {
                                 withContext(Dispatchers.IO) { AppServices.ledgerRepository.addEntry(body) }
-                                onSuccess("已记账")
+                                showPostSaveChoice = true
                             }
-                            onDone()
                         } catch (e: Exception) {
                             err = e.message ?: "保存失败"
                             onError(err!!)
@@ -442,6 +449,31 @@ fun EntryFormScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDelete = false }) { Text("取消") }
+            },
+        )
+    }
+
+    if (showPostSaveChoice) {
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text("记账成功") },
+            text = { Text("这笔流水已保存。要继续记账，还是返回流水页？") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showPostSaveChoice = false
+                        prepareForNextEntry()
+                    },
+                ) { Text("继续记账") }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showPostSaveChoice = false
+                        onSuccess("已记账")
+                        onDone()
+                    },
+                ) { Text("返回流水页") }
             },
         )
     }

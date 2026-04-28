@@ -89,6 +89,23 @@ import kotlinx.coroutines.withContext
 
 private const val PAGE_SIZE = 20
 
+private data class EntryRowUiModel(
+    val id: Long,
+    val initial: String,
+    val category: String,
+    val sub: String,
+    val amountText: String,
+    val isIncome: Boolean,
+)
+
+private data class EntryDayGroupUiModel(
+    val dateKey: String,
+    val dateLabel: String,
+    val incomeText: String?,
+    val expenseText: String?,
+    val rows: List<EntryRowUiModel>,
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EntriesScreen(
@@ -116,13 +133,20 @@ fun EntriesScreen(
         debouncedRemark = remarkKeyword.trim()
     }
 
-    LaunchedEffect(yearMonth, entryType, scopeAccountId, debouncedRemark) {
-        loading = true
+    LaunchedEffect(Unit) {
         try {
             val accList = withContext(Dispatchers.IO) {
                 AppServices.ledgerRepository.listAccounts().mapJsonObjects()
             }
             accounts = accList.map { (it.optLong("id") ?: 0L) to (it.optString("name") ?: "") }
+        } catch (e: Exception) {
+            onError(e.message ?: "账户加载失败")
+        }
+    }
+
+    LaunchedEffect(yearMonth, entryType, scopeAccountId, debouncedRemark) {
+        loading = true
+        try {
             val aid = scopeAccountId
             val (arr, n) = withContext(Dispatchers.IO) {
                 AppServices.ledgerRepository.entryListPage(
@@ -158,6 +182,7 @@ fun EntriesScreen(
         val aid = scopeAccountId
         if (aid != null) put("account_id", aid)
     }
+    val groupedRows = remember(rows) { rows.toEntryDayGroups() }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         // 顶部“筛选区”：使用极浅的主题背景色，与 TopBar 衔接
@@ -339,15 +364,8 @@ fun EntriesScreen(
                         }
                     }
                 } else {
-                    // 按日期分组显示
-                    val groups = rows.groupBy { it.get("entry_date")?.asStringOrNull()?.take(10) ?: "" }
-                    groups.forEach { (date, dayRows) ->
-                        item {
-                            val dayIncome = dayRows.filter { it.get("entry_type")?.asStringOrNull() == "income" }
-                                .sumOf { it.optDouble("amount") ?: 0.0 }
-                            val dayExpense = dayRows.filter { it.get("entry_type")?.asStringOrNull() == "expense" }
-                                .sumOf { it.optDouble("amount") ?: 0.0 }
-
+                    groupedRows.forEach { group ->
+                        item(key = "group-${group.dateKey}") {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -362,20 +380,20 @@ fun EntriesScreen(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    Text(formatDateDisplay(date), fontWeight = FontWeight.Black, fontSize = 14.sp, color = TextPrimary)
+                                    Text(group.dateLabel, fontWeight = FontWeight.Black, fontSize = 14.sp, color = TextPrimary)
                                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        if (dayIncome > 0) {
-                                            Text("收 ${formatMoney(dayIncome)}", color = Income, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                        group.incomeText?.let { incomeText ->
+                                            Text(incomeText, color = Income, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                                         }
-                                        if (dayExpense > 0) {
-                                            Text("支 ${formatMoney(dayExpense)}", color = Expense, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                                        group.expenseText?.let { expenseText ->
+                                            Text(expenseText, color = Expense, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                                         }
                                     }
                                 }
 
-                                dayRows.forEach { row ->
-                                    EntryListRow(row, onClick = { onOpenEntry(row.optLong("id") ?: 0L) })
-                                    if (dayRows.indexOf(row) < dayRows.size - 1) {
+                                group.rows.forEachIndexed { idx, row ->
+                                    EntryListRow(row, onClick = { onOpenEntry(row.id) })
+                                    if (idx < group.rows.lastIndex) {
                                         HorizontalDivider(
                                             modifier = Modifier.padding(horizontal = 16.dp),
                                             thickness = 0.5.dp,
@@ -453,8 +471,7 @@ fun EntriesScreen(
 }
 
 @Composable
-private fun EntryListRow(row: JsonObject, onClick: () -> Unit) {
-    val income = row.get("entry_type")?.asStringOrNull() == "income"
+private fun EntryListRow(row: EntryRowUiModel, onClick: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -466,12 +483,12 @@ private fun EntryListRow(row: JsonObject, onClick: () -> Unit) {
             modifier = Modifier
                 .size(40.dp)
                 .clip(RoundedCornerShape(12.dp))
-                .background(if (income) Income.copy(alpha = 0.1f) else Expense.copy(alpha = 0.1f)),
+                .background(if (row.isIncome) Income.copy(alpha = 0.1f) else Expense.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center
         ) {
             Text(
-                (row.get("category_name")?.asStringOrNull() ?: "—").take(1),
-                color = if (income) Income else Expense,
+                row.initial,
+                color = if (row.isIncome) Income else Expense,
                 fontWeight = FontWeight.Bold,
                 fontSize = 16.sp
             )
@@ -479,21 +496,14 @@ private fun EntryListRow(row: JsonObject, onClick: () -> Unit) {
 
         Column(Modifier.padding(start = 12.dp).weight(1f)) {
             Text(
-                row.get("category_name")?.asStringOrNull() ?: "",
+                row.category,
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = TextPrimary
             )
-            val acc = row.get("account_name")?.asStringOrNull()
-            val remark = row.get("remark")?.asStringOrNull()
-            val sub = listOfNotNull(
-                acc.takeIf { !it.isNullOrBlank() },
-                remark.takeIf { !it.isNullOrBlank() }
-            ).joinToString(" · ")
-            
-            if (sub.isNotEmpty()) {
+            if (row.sub.isNotEmpty()) {
                 Text(
-                    sub,
+                    row.sub,
                     fontSize = 12.sp,
                     color = Muted,
                     modifier = Modifier.padding(top = 2.dp),
@@ -502,13 +512,50 @@ private fun EntryListRow(row: JsonObject, onClick: () -> Unit) {
                 )
             }
         }
-        val amt = row.optDouble("amount") ?: 0.0
         Text(
-            (if (income) "+" else "−") + formatMoney(amt),
+            row.amountText,
             fontWeight = FontWeight.ExtraBold,
             fontSize = 15.sp,
-            color = if (income) Income else Expense,
+            color = if (row.isIncome) Income else Expense,
             textAlign = TextAlign.End
         )
     }
 }
+
+private fun List<JsonObject>.toEntryDayGroups(): List<EntryDayGroupUiModel> =
+    groupBy { it.get("entry_date")?.asStringOrNull()?.take(10) ?: "" }
+        .map { (date, dayRows) ->
+            var dayIncome = 0.0
+            var dayExpense = 0.0
+            val rowModels = dayRows.map { row ->
+                val isIncome = row.get("entry_type")?.asStringOrNull() == "income"
+                val amount = row.optDouble("amount") ?: 0.0
+                if (isIncome) {
+                    dayIncome += amount
+                } else {
+                    dayExpense += amount
+                }
+                val category = row.get("category_name")?.asStringOrNull() ?: "—"
+                val acc = row.get("account_name")?.asStringOrNull()
+                val remark = row.get("remark")?.asStringOrNull()
+                val sub = listOfNotNull(
+                    acc.takeIf { !it.isNullOrBlank() },
+                    remark.takeIf { !it.isNullOrBlank() }
+                ).joinToString(" · ")
+                EntryRowUiModel(
+                    id = row.optLong("id") ?: 0L,
+                    initial = category.take(1),
+                    category = category,
+                    sub = sub,
+                    amountText = (if (isIncome) "+" else "−") + formatMoney(amount),
+                    isIncome = isIncome,
+                )
+            }
+            EntryDayGroupUiModel(
+                dateKey = date,
+                dateLabel = formatDateDisplay(date),
+                incomeText = dayIncome.takeIf { it > 0 }?.let { "收 ${formatMoney(it)}" },
+                expenseText = dayExpense.takeIf { it > 0 }?.let { "支 ${formatMoney(it)}" },
+                rows = rowModels,
+            )
+        }
