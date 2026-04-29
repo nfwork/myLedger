@@ -3,7 +3,6 @@ package com.myledger.api.service;
 import com.github.nfwork.dbfound.starter.ModelExecutor;
 import com.myledger.api.model.entity.RefreshTokenUserIdRow;
 import com.nfwork.dbfound.core.Context;
-import com.nfwork.dbfound.dto.ResponseObject;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -22,7 +21,7 @@ public class RefreshTokenService {
                 .withParam("user_id", userId)
                 .withParam("token_hash", tokenHash)
                 .withParam("expires_at", expiresAtEpochSeconds);
-        requireSuccess(modelExecutor.execute(ctx, MODEL, "insert"), "insert refresh token");
+        modelExecutor.execute(ctx, MODEL, "insert");
     }
 
     public Long consumeByPlaintext(String rawToken) {
@@ -32,7 +31,7 @@ public class RefreshTokenService {
         if (row == null || row.getUserId() == null) {
             return null;
         }
-        requireSuccess(modelExecutor.execute(new Context().withParam("token_hash", hash), MODEL, "deleteByHash"), "delete refresh token");
+        modelExecutor.execute(new Context().withParam("token_hash", hash), MODEL, "deleteByHash");
         return row.getUserId();
     }
 
@@ -46,12 +45,5 @@ public class RefreshTokenService {
 
     public void deleteExpired() {
         modelExecutor.execute(new Context(), MODEL, "deleteExpired");
-    }
-
-    private static void requireSuccess(ResponseObject ro, String action) {
-        if (ro == null || !ro.isSuccess()) {
-            String msg = ro != null ? ro.getMessage() : "null response";
-            throw new IllegalStateException("dbfound " + action + " failed: " + msg);
-        }
     }
 }
