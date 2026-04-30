@@ -4,7 +4,7 @@
 
 **`GET /api/health`**：Spring 健康检查（不经 dbfound）。其余业务接口主要为 **dbfound Model HTTP**：路径对应 `src/main/resources/model/**/*.xml`（不含 `.xml`），后缀 **`.query` / `.query!名称`** 为查询，**`.execute!名称`** 为执行。
 
-**模块与路径**：`model/user/user.xml` → `/user/user.*`；`model/ledger_settings/account.xml`、`category.xml` → `/ledger_settings/account.*`、`/ledger_settings/category.*`；`model/bookkeeping/entry.xml` → `/bookkeeping/entry.*`；`model/report/summary.xml` → `/report/summary.*`；`model/auth/refresh_token.xml` → **`/auth/refresh_token.*`**。上述 dbfound HTTP 与下文「匿名白名单」以外路径一致：**须 Bearer**。其中 **`user/user.query!login`**、**`user/user.query!findByIdForAuth`**、**`auth/refresh_token.*`** 一般由服务端 **`ModelExecutor`** 调用；终端登录请用 **`POST /api/auth/login`**。
+**模块与路径**：`model/user/user.xml` → `/user/user.*`；`model/ledger_settings/account.xml`、`category.xml` → `/ledger_settings/account.*`、`/ledger_settings/category.*`；`model/bookkeeping/entry.xml` → `/bookkeeping/entry.*`；`model/report/summary.xml` → `/report/summary.*`。dbfound Model HTTP 已启用 **`dbfound.web.api-allow-urls`** 白名单，只有配置列出的路径可被 HTTP 访问；白名单内除下文「匿名白名单」以外路径一致：**须 Bearer**。**`user/user.query!login`**、**`user/user.query!findByIdForAuth`**、**`model/auth/refresh_token.xml`** 下接口仅供服务端 **`ModelExecutor`** 调用，不开放 dbfound HTTP；终端登录请用 **`POST /api/auth/login`**。
 
 ## 登录与鉴权（JWT + dbfound request 作用域）
 
@@ -47,7 +47,7 @@
 
 | 类型 | 路径 | 说明 |
 |------|------|------|
-| query | `/user/user.query!login` | 需 Bearer；与 `/api/auth/login` 共用校验 SQL，`AuthService` 内用 `ModelExecutor` |
+| query | `/user/user.query!login` | 服务端内部；与 `/api/auth/login` 共用校验 SQL，不在 dbfound HTTP 白名单 |
 | query | `/user/user.query!getById` | 需 Bearer |
 | execute | `/user/user.execute!register` | 匿名；注册并初始化默认账户与分类 |
 | execute | `/user/user.execute!updateProfile` | `nickname` |

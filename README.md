@@ -34,7 +34,7 @@ mvn spring-boot:run
 
 默认 **8080**。开发期 Maven 默认带 Spring **`dev`** profile（`application-dev.yml`，含 model 热加载等）；生产请使用 **`SPRING_PROFILES_ACTIVE=prod`**（或至少非 `dev`）。**IDEA** 运行主类时工作目录建议为 **`myledger-api`** 模块根。
 
-健康检查：`GET http://192.168.0.156:8080/api/health`。登录：`POST /api/auth/login`（返回 JWT，业务请求 `Authorization: Bearer`）；业务接口与路径见 **[docs/api-http.md](docs/api-http.md)**。数据库需含 **`ml_refresh_token`** 表（见 `docs/sql/init_schema.sql`）。
+健康检查：`GET http://192.168.0.156:8080/api/health`。登录：`POST /api/auth/login`（返回 JWT，业务请求 `Authorization: Bearer`）；dbfound Model HTTP 已开启 **`dbfound.web.api-allow-urls`** 白名单，未配置路径会被拒绝；业务接口与路径见 **[docs/api-http.md](docs/api-http.md)**。数据库需含 **`ml_refresh_token`** 表（见 `docs/sql/init_schema.sql`）。
 
 ### Android
 

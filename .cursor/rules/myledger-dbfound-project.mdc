@@ -2,6 +2,7 @@
 description: myLedger 后端 — dbfound 工程约定（路径、命名、与框架规则叠加）
 globs:
   - "**/model/**/*.xml"
+  - "**/application*.yml"
   - "**/*Adapter*.java"
   - "**/*Controller*.java"
   - "**/*Service*.java"
@@ -25,6 +26,12 @@ alwaysApply: false
 | `model/report/summary.xml` | `report/summary` | 报表统计 |
 
 前端 `myledger-h5` 的 `src/api` 与上述目录对齐时，见 **`.cursor/rules/myledger-h5-api-urls.mdc`**（完整 URL、禁止抽离公共前缀）。
+
+## Model HTTP 白名单
+
+- dbfound Model HTTP 已通过 **`myledger-api/src/main/resources/application.yml`** 的 **`dbfound.web.api-allow-urls`** 启用显式白名单；未列出的 `*.query` / `*.execute` 默认不允许终端访问。
+- 后续新增或改名某个 model 的 `query` / `execute` 时，若该接口需要给 H5、Android、curl 或其它终端通过 HTTP 访问，必须同步把完整路径加入 **`api-allow-urls`**，例如 `"/bookkeeping/entry.query!list"`。
+- 仅服务端 Java 通过 **`ModelExecutor`** 内部调用的接口不要加入 HTTP 白名单，例如登录校验、refresh token 维护等内部 model API。
 
 ## 列名与强类型映射
 

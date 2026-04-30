@@ -19,6 +19,31 @@ dbfound:
   # JWT 鉴权，不再用 HttpSession；关闭 dbfound 对 session 的读写（见 DBFoundConfigProperties.WebConfig#openSession）
   web:
     open-session: false
+    # 非空即启用 dbfound Model HTTP 白名单；未列出的 *.query / *.execute 会返回 403。
+    api-allow-urls:
+      - "/user/user.query!getById"
+      - "/user/user.execute!register"
+      - "/user/user.execute!updateProfile"
+      - "/user/user.execute!changePassword"
+      - "/ledger_settings/account.query!listByUser"
+      - "/ledger_settings/account.query!getDefault"
+      - "/ledger_settings/account.execute!add"
+      - "/ledger_settings/account.execute!update"
+      - "/ledger_settings/account.execute!setDefault"
+      - "/ledger_settings/account.execute!delete"
+      - "/ledger_settings/category.query!list"
+      - "/ledger_settings/category.execute!add"
+      - "/ledger_settings/category.execute!update"
+      - "/ledger_settings/category.execute!delete"
+      - "/bookkeeping/entry.query!list"
+      - "/bookkeeping/entry.query!getById"
+      - "/bookkeeping/entry.execute!add"
+      - "/bookkeeping/entry.execute!update"
+      - "/bookkeeping/entry.execute!delete"
+      - "/report/summary.query!monthTotals"
+      - "/report/summary.query!byCategory"
+      - "/report/summary.query!matrixByMonthCategory"
+      - "/report/summary.query!byDay"
   datasource:
     db0:
       url: jdbc:mysql://127.0.0.1:8306/myledger?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
