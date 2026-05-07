@@ -8,12 +8,12 @@ import com.myledger.api.model.dto.response.AuthTokenBundleDto;
 import com.myledger.api.model.dto.response.AuthUserDto;
 import com.myledger.api.model.entity.MlUser;
 import com.nfwork.dbfound.core.Context;
-import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.HexFormat;

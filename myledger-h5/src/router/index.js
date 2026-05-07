@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
 const LoginView = () => import('../views/LoginView.vue')
@@ -14,7 +14,7 @@ const ChangePasswordView = () => import('../views/ChangePasswordView.vue')
 const AccountsView = () => import('../views/AccountsView.vue')
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/login', name: 'login', component: LoginView, meta: { public: true } },
     { path: '/register', name: 'register', component: RegisterView, meta: { public: true } },

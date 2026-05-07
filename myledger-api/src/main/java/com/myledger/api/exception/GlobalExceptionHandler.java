@@ -2,12 +2,10 @@ package com.myledger.api.exception;
 
 import com.myledger.api.model.dto.response.ApiResponse;
 import com.nfwork.dbfound.exception.CollisionException;
-import com.nfwork.dbfound.exception.DBFoundPackageException;
-import jakarta.servlet.http.HttpServletRequest;
+import com.nfwork.dbfound.exception.DBFoundWrappedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.util.StringUtils;
@@ -18,6 +16,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.server.ResponseStatusException;
 
+import javax.servlet.http.HttpServletRequest;
 import java.sql.SQLException;
 
 /**
@@ -34,7 +33,7 @@ public class GlobalExceptionHandler {
             ResponseStatusException exception,
             HttpServletRequest request
     ) {
-        HttpStatusCode status = exception.getStatusCode();
+        HttpStatus status = exception.getStatus();
         String message = getResponseStatusMessage(exception);
         logByStatus(status, exception, request, message);
         return fail(status, message);
@@ -61,9 +60,9 @@ public class GlobalExceptionHandler {
         return fail(HttpStatus.METHOD_NOT_ALLOWED, message);
     }
 
-    @ExceptionHandler(DBFoundPackageException.class)
+    @ExceptionHandler(DBFoundWrappedException.class)
     public ResponseEntity<ApiResponse<Void>> handleDbfoundPackage(
-            DBFoundPackageException exception,
+            DBFoundWrappedException exception,
             HttpServletRequest request
     ) {
         Exception unwrapped = unwrapDbfoundPackage(exception);
@@ -97,7 +96,7 @@ public class GlobalExceptionHandler {
         return fail(HttpStatus.INTERNAL_SERVER_ERROR, message);
     }
 
-    private static Exception unwrapDbfoundPackage(DBFoundPackageException exception) {
+    private static Exception unwrapDbfoundPackage(DBFoundWrappedException exception) {
         Throwable cause = exception.getCause();
         if (cause instanceof Exception e) {
             return e;
@@ -109,8 +108,7 @@ public class GlobalExceptionHandler {
         if (StringUtils.hasText(exception.getReason())) {
             return exception.getReason();
         }
-        String detail = exception.getBody().getDetail();
-        return StringUtils.hasText(detail) ? detail : "请求失败";
+        return "请求失败";
     }
 
     private static String getServerErrorMessage(Exception exception) {
@@ -130,7 +128,7 @@ public class GlobalExceptionHandler {
     }
 
     private static void logByStatus(
-            HttpStatusCode status,
+            HttpStatus status,
             Exception exception,
             HttpServletRequest request,
             String message
@@ -147,7 +145,7 @@ public class GlobalExceptionHandler {
         log.info("{}: {}, request url: {}", exception.getClass().getName(), message, request.getRequestURI());
     }
 
-    private static ResponseEntity<ApiResponse<Void>> fail(HttpStatusCode status, String message) {
+    private static ResponseEntity<ApiResponse<Void>> fail(HttpStatus status, String message) {
         return ResponseEntity.status(status).body(ApiResponse.fail(message));
     }
 }
