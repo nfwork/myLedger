@@ -71,7 +71,7 @@ function Clear-ApiArtifacts {
         return
     }
 
-    @("WEB-INF", "META-INF") | ForEach-Object {
+    @("WEB-INF", "META-INF", "org") | ForEach-Object {
         $ArtifactPath = Join-Path $Path $_
         if (Test-Path -LiteralPath $ArtifactPath) {
             Remove-Item -LiteralPath $ArtifactPath -Recurse -Force
@@ -86,8 +86,9 @@ function Clear-H5Artifacts {
         return
     }
 
+    $ApiArtifacts = @("WEB-INF", "META-INF", "org")
     Get-ChildItem -LiteralPath $Path -Force |
-        Where-Object { @("WEB-INF", "META-INF") -notcontains $_.Name } |
+        Where-Object { $ApiArtifacts -notcontains $_.Name } |
         Remove-Item -Recurse -Force
 }
 
