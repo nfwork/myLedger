@@ -22,7 +22,18 @@
       <RouterLink to="/password" class="row">修改密码 <span class="chev">›</span></RouterLink>
     </div>
 
-    <button type="button" class="btn btn-ghost full logout" @click="doLogout">退出登录</button>
+    <button type="button" class="btn btn-ghost full logout" @click="showLogoutConfirm = true">退出登录</button>
+
+    <div v-if="showLogoutConfirm" class="dialog-mask" role="dialog" aria-modal="true" aria-labelledby="logout-title">
+      <div class="dialog-card card">
+        <h2 id="logout-title">确认退出</h2>
+        <p>退出后需要重新登录才能继续使用。</p>
+        <div class="dialog-actions">
+          <button type="button" class="btn btn-ghost" @click="showLogoutConfirm = false">取消</button>
+          <button type="button" class="btn btn-danger solid" @click="doLogout">退出登录</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -40,6 +51,7 @@ const toast = useToast()
 const user = computed(() => auth.user.value)
 const nickname = ref('')
 const saving = ref(false)
+const showLogoutConfirm = ref(false)
 
 const initials = computed(() => {
   const n = user.value?.username || '?'
@@ -72,6 +84,7 @@ async function saveNick() {
 }
 
 async function doLogout() {
+  showLogoutConfirm.value = false
   await auth.logout()
   toast.show('已退出', 'info')
   router.replace('/login')
@@ -140,5 +153,41 @@ async function doLogout() {
 .logout {
   width: 100%;
   border: 1px solid var(--line);
+}
+.btn-danger.solid {
+  background: rgb(225 29 72 / 0.92);
+  color: #fff;
+  box-shadow: 0 6px 20px rgb(225 29 72 / 0.2);
+}
+.dialog-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgb(15 23 42 / 0.32);
+  backdrop-filter: blur(3px);
+}
+.dialog-card {
+  width: min(100%, 22rem);
+  padding: 1.15rem 1.1rem 1rem;
+}
+.dialog-card h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+.dialog-card p {
+  margin: 0.55rem 0 1rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
 }
 </style>

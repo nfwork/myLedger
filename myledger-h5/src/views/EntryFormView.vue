@@ -51,10 +51,34 @@
       <button type="submit" class="btn btn-primary full" :disabled="saving">
         {{ saving ? '保存中…' : isEdit ? '保存修改' : '保存' }}
       </button>
-      <button v-if="isEdit" type="button" class="btn btn-danger full outline" :disabled="saving" @click="remove">
+      <button v-if="isEdit" type="button" class="btn btn-danger full outline" :disabled="saving" @click="showDeleteConfirm = true">
         删除本条
       </button>
     </form>
+
+    <div v-if="showPostSaveChoice" class="dialog-mask" role="dialog" aria-modal="true" aria-labelledby="post-save-title">
+      <div class="dialog-card card">
+        <h2 id="post-save-title">记账成功</h2>
+        <p>这笔流水已保存。要继续记账，还是返回流水页？</p>
+        <div class="dialog-actions">
+          <button type="button" class="btn btn-ghost" @click="continueEntry">继续记账</button>
+          <button type="button" class="btn btn-primary" @click="backToEntries">返回流水页</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showDeleteConfirm" class="dialog-mask" role="dialog" aria-modal="true" aria-labelledby="delete-title">
+      <div class="dialog-card card">
+        <h2 id="delete-title">确认删除</h2>
+        <p>确定删除这条流水？</p>
+        <div class="dialog-actions">
+          <button type="button" class="btn btn-ghost" :disabled="saving" @click="showDeleteConfirm = false">取消</button>
+          <button type="button" class="btn btn-danger solid" :disabled="saving" @click="remove">
+            {{ saving ? '删除中…' : '删除' }}
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -81,6 +105,8 @@ const saving = ref(false)
 const err = ref('')
 const accounts = ref([])
 const categories = ref([])
+const showPostSaveChoice = ref(false)
+const showDeleteConfirm = ref(false)
 
 const form = reactive({
   entry_type: 'expense',
@@ -147,6 +173,23 @@ onMounted(async () => {
 
 async function submit() {
   err.value = ''
+  const amount = Number(form.amount)
+  if (form.amount == null || form.amount === '') {
+    err.value = '请输入金额'
+    toast.show(err.value, 'error')
+    return
+  }
+  if (!Number.isFinite(amount) || amount < 0.01) {
+    err.value = '请输入有效金额'
+    toast.show(err.value, 'error')
+    return
+  }
+  const dateErr = validateEntryDate(form.entry_date)
+  if (dateErr) {
+    err.value = dateErr
+    toast.show(err.value, 'error')
+    return
+  }
   if (form.category_id == null || form.account_id == null) {
     err.value = '请选择资金账户与分类'
     toast.show(err.value, 'error')
@@ -163,19 +206,19 @@ async function submit() {
       account_id: form.account_id,
       category_id: form.category_id,
       entry_type: form.entry_type,
-      amount: form.amount,
+      amount,
       entry_date: form.entry_date,
-      remark: form.remark,
+      remark: form.remark.trim(),
     }
     if (isEdit.value) {
       body.id = Number(route.params.id)
       await updateEntry(body)
       toast.show('已保存', 'success')
+      router.push('/entries')
     } else {
       await createEntry(body)
-      toast.show('已记账', 'success')
+      showPostSaveChoice.value = true
     }
-    router.push('/entries')
   } catch (e) {
     err.value = e?.message || '保存失败'
     toast.show(err.value, 'error')
@@ -184,8 +227,20 @@ async function submit() {
   }
 }
 
+function continueEntry() {
+  form.amount = null
+  form.remark = ''
+  err.value = ''
+  showPostSaveChoice.value = false
+}
+
+function backToEntries() {
+  showPostSaveChoice.value = false
+  toast.show('已记账', 'success')
+  router.push('/entries')
+}
+
 async function remove() {
-  if (!confirm('确定删除这条流水？')) return
   saving.value = true
   try {
     await deleteEntry(route.params.id)
@@ -195,7 +250,25 @@ async function remove() {
     toast.show(e?.message || '删除失败', 'error')
   } finally {
     saving.value = false
+    showDeleteConfirm.value = false
   }
+}
+
+function validateEntryDate(value) {
+  const s = String(value || '').trim()
+  if (!s) return '请填写日期'
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  if (!match) return '请输入有效日期'
+  const [, yy, mm, dd] = match
+  const d = new Date(Number(yy), Number(mm) - 1, Number(dd))
+  if (
+    d.getFullYear() !== Number(yy) ||
+    d.getMonth() + 1 !== Number(mm) ||
+    d.getDate() !== Number(dd)
+  ) {
+    return '请输入有效日期'
+  }
+  return ''
 }
 </script>
 
@@ -252,5 +325,41 @@ async function remove() {
 }
 .btn-danger {
   background: transparent;
+}
+.btn-danger.solid {
+  background: rgb(225 29 72 / 0.92);
+  color: #fff;
+  box-shadow: 0 6px 20px rgb(225 29 72 / 0.2);
+}
+.dialog-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgb(15 23 42 / 0.32);
+  backdrop-filter: blur(3px);
+}
+.dialog-card {
+  width: min(100%, 22rem);
+  padding: 1.15rem 1.1rem 1rem;
+}
+.dialog-card h2 {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+.dialog-card p {
+  margin: 0.55rem 0 1rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.dialog-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
 }
 </style>

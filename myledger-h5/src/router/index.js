@@ -24,7 +24,7 @@ const router = createRouter({
       meta: { requiresAuth: true },
       children: [
         { path: '', redirect: { name: 'dashboard' } },
-        { path: 'dashboard', name: 'dashboard', component: DashboardView, meta: { title: '概览' } },
+        { path: 'dashboard', name: 'dashboard', component: DashboardView, meta: { title: '首页' } },
         { path: 'entries', name: 'entries', component: EntriesView, meta: { title: '流水' } },
         {
           path: 'entry/new',

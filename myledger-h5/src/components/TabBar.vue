@@ -4,7 +4,7 @@
       <span class="ico" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="22" height="22"><path fill="currentColor" d="M4 10.5V19a1 1 0 001 1h5v-6H9v-3h2V9H4v1.5zm16 0V9h-7v2h2v3h-2v6h5a1 1 0 001-1v-8.5a1 1 0 00-.4-.8L13 5.1a1 1 0 00-1.2 0l-5.6 4.4a1 1 0 00-.2.2z"/></svg>
       </span>
-      <span>概览</span>
+      <span>首页</span>
     </RouterLink>
     <RouterLink class="tab" to="/entries" active-class="is-active">
       <span class="ico" aria-hidden="true">

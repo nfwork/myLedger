@@ -2,7 +2,9 @@
   <div class="main-layout">
     <header v-if="title" class="page-head">
       <button v-if="showBack" type="button" class="back" @click="goBack" aria-label="返回">‹</button>
+      <span v-else class="head-spacer" aria-hidden="true"></span>
       <h1>{{ title }}</h1>
+      <span class="head-spacer" aria-hidden="true"></span>
     </header>
     <div class="page-body" :class="{ 'has-head': !!title }">
       <RouterView />
@@ -45,9 +47,10 @@ function goBack() {
   flex-shrink: 0;
   position: relative;
   z-index: 40;
-  display: flex;
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) 2.5rem;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
   padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-top, 0px));
   padding-top: calc(0.65rem + env(safe-area-inset-top, 0px));
   background: linear-gradient(135deg, #0f766e 0%, #0d9488 55%, #14b8a6 100%);
@@ -59,6 +62,10 @@ function goBack() {
   font-size: 1.05rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+  text-align: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .back {
   border: none;
@@ -70,6 +77,10 @@ function goBack() {
   font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
+}
+.head-spacer {
+  width: 2.25rem;
+  height: 2.25rem;
 }
 .page-body {
   flex: 1;

@@ -76,28 +76,34 @@
 
     <p v-if="loading" class="muted">加载中…</p>
     <template v-else>
-      <ul class="list">
-        <li v-for="row in rows" :key="row.id">
-          <RouterLink class="row" :to="`/entry/${row.id}/edit`">
-            <div>
-              <div class="top">
-                <span class="pill" :class="row.entry_type === 'income' ? 'pill-income' : 'pill-expense'">
-                  {{ row.entry_type === 'income' ? '收入' : '支出' }}
-                </span>
-                <span class="cat">{{ row.category_name }}</span>
-              </div>
-              <div class="sub">
-                {{ formatDateDisplay(row.entry_date) }}
-                <span v-if="row.account_name" class="acc"> · {{ row.account_name }}</span>
-                <span v-if="row.remark"> · {{ row.remark }}</span>
-              </div>
-            </div>
-            <div class="amt" :class="row.entry_type === 'income' ? 'in' : 'ex'">
+      <ul class="day-list">
+        <li v-for="group in groupedRows" :key="group.dateKey" class="day-card card">
+          <div class="day-head">
+            <strong>{{ group.dateLabel }}</strong>
+            <span class="day-totals">
+              <span v-if="group.incomeText" class="daily-total in">{{ group.incomeText }}</span>
+              <span v-if="group.expenseText" class="daily-total ex">{{ group.expenseText }}</span>
+            </span>
+          </div>
+          <RouterLink
+            v-for="row in group.rows"
+            :key="row.id"
+            class="entry-row"
+            :to="`/entry/${row.id}/edit`"
+          >
+            <span class="entry-initial" :class="row.entry_type === 'income' ? 'in' : 'ex'">
+              {{ entryInitial(row) }}
+            </span>
+            <span class="row-main">
+              <span class="cat">{{ row.category_name || '—' }}</span>
+              <span v-if="rowSub(row)" class="sub">{{ rowSub(row) }}</span>
+            </span>
+            <span class="amt" :class="row.entry_type === 'income' ? 'in' : 'ex'">
               {{ row.entry_type === 'income' ? '+' : '−' }}{{ formatMoney(row.amount) }}
-            </div>
+            </span>
           </RouterLink>
         </li>
-        <li v-if="!rows.length" class="empty">暂无流水</li>
+        <li v-if="!rows.length" class="empty card">暂无流水</li>
       </ul>
 
       <div v-if="total > 0" class="load-footer card" aria-label="加载更多">
@@ -149,8 +155,45 @@ const accountPick = computed({
   set: (v) => setScopeAccountId(v === '' || v == null ? null : v),
 })
 
+const groupedRows = computed(() => {
+  const groups = []
+  const byDate = new Map()
+  for (const row of rows.value) {
+    const dateKey = String(row.entry_date || '').slice(0, 10)
+    if (!byDate.has(dateKey)) {
+      const group = {
+        dateKey,
+        dateLabel: formatDateDisplay(dateKey) || '未设置日期',
+        income: 0,
+        expense: 0,
+        rows: [],
+      }
+      byDate.set(dateKey, group)
+      groups.push(group)
+    }
+    const group = byDate.get(dateKey)
+    const amount = Number(row.amount) || 0
+    if (row.entry_type === 'income') group.income += amount
+    else group.expense += amount
+    group.rows.push(row)
+  }
+  return groups.map((group) => ({
+    ...group,
+    incomeText: group.income > 0 ? `收 ${formatMoney(group.income)}` : '',
+    expenseText: group.expense > 0 ? `支 ${formatMoney(group.expense)}` : '',
+  }))
+})
+
 function shift(d) {
   yearMonth.value = shiftYearMonth(yearMonth.value, d)
+}
+
+function entryInitial(row) {
+  return String(row.category_name || '—').slice(0, 1)
+}
+
+function rowSub(row) {
+  return [row.account_name, row.remark].filter((v) => String(v || '').trim()).join(' · ')
 }
 
 function listQueryBody(start) {
@@ -373,47 +416,102 @@ onMounted(load)
   color: var(--muted);
   text-align: center;
 }
-.list {
+.day-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.75rem;
 }
-.row {
+.day-card {
+  overflow: hidden;
+}
+.day-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.85rem 1rem;
-  border-radius: var(--radius);
-  background: var(--surface);
-  border: 1px solid var(--line);
-  text-decoration: none;
-  color: inherit;
-  box-shadow: var(--shadow);
+  gap: 0.75rem;
+  padding: 0.55rem 0.9rem;
+  background: rgb(15 23 42 / 0.02);
 }
-.top {
+.day-head strong {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+.day-totals {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.daily-total {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+.daily-total.in {
+  color: var(--income);
+}
+.daily-total.ex {
+  color: var(--expense);
+}
+.entry-row {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.75rem;
+  padding: 0.78rem 1rem;
+  text-decoration: none;
+  color: inherit;
+}
+.entry-row + .entry-row {
+  border-top: 1px solid rgb(13 148 136 / 0.1);
+}
+.entry-initial {
+  flex: 0 0 auto;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 800;
+}
+.entry-initial.in {
+  background: rgb(5 150 105 / 0.1);
+  color: var(--income);
+}
+.entry-initial.ex {
+  background: rgb(225 29 72 / 0.1);
+  color: var(--expense);
+}
+.row-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 .cat {
   font-weight: 700;
   font-size: 0.95rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .sub {
   margin-top: 0.2rem;
   font-size: 0.78rem;
   color: var(--muted);
-}
-.acc {
-  font-weight: 600;
-  color: rgb(100 116 139 / 0.92);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .amt {
+  flex: 0 0 auto;
   font-weight: 800;
   font-size: 1rem;
+  text-align: right;
 }
 .amt.in {
   color: var(--income);

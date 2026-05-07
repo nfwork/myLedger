@@ -15,19 +15,24 @@
     </div>
 
     <section class="totals">
-      <div class="tile income">
-        <span class="lbl">本月收入</span>
-        <strong>{{ formatMoney(totals.income_total) }}</strong>
-      </div>
       <div class="tile expense">
         <span class="lbl">本月支出</span>
         <strong>{{ formatMoney(totals.expense_total) }}</strong>
       </div>
+      <div class="tile income">
+        <span class="lbl">本月收入</span>
+        <strong>{{ formatMoney(totals.income_total) }}</strong>
+      </div>
     </section>
 
     <div class="balance card">
-      <span>本月结余</span>
-      <strong :class="balance >= 0 ? 'pos' : 'neg'">{{ formatMoney(balance) }}</strong>
+      <div class="balance-main">
+        <span>本月结余</span>
+        <strong :class="balance >= 0 ? 'pos' : 'neg'">{{ formatMoney(balance) }}</strong>
+      </div>
+      <span class="balance-badge" :class="balance >= 0 ? 'pos' : 'neg'">
+        {{ balance >= 0 ? '盈' : '亏' }}
+      </span>
     </div>
 
     <p v-if="loading" class="muted">加载中…</p>
@@ -268,44 +273,85 @@ onMounted(load)
 }
 .tile {
   border-radius: var(--radius);
-  padding: 1rem 1.1rem;
-  color: #fff;
+  padding: 0.9rem 0.95rem;
+  border: 1px solid rgb(13 148 136 / 0.08);
   box-shadow: var(--shadow);
 }
 .tile.income {
-  background: linear-gradient(135deg, #34d399, #059669);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.96), rgb(5 150 105 / 0.12));
 }
 .tile.expense {
-  background: linear-gradient(135deg, #fb7185, #e11d48);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.96), rgb(225 29 72 / 0.12));
 }
 .tile .lbl {
   display: block;
   font-size: 0.75rem;
-  opacity: 0.9;
-  font-weight: 600;
+  color: var(--muted);
+  font-weight: 800;
 }
 .tile strong {
-  font-size: 1.2rem;
-  font-weight: 800;
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 1.08rem;
+  font-weight: 900;
+  line-height: 1.25;
+  word-break: break-all;
+}
+.tile.income strong {
+  color: var(--income);
+}
+.tile.expense strong {
+  color: var(--expense);
 }
 .balance {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.85rem 1.1rem;
-  font-size: 0.9rem;
+  gap: 0.75rem;
+  padding: 0.65rem 0.9rem;
+  background: linear-gradient(90deg, rgb(13 148 136 / 0.08), rgb(255 255 255 / 0));
+  font-size: 0.78rem;
   color: var(--muted);
-  font-weight: 600;
+  font-weight: 800;
+}
+.balance-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .balance strong {
-  font-size: 1.15rem;
+  min-width: 0;
+  flex: 1;
+  font-size: 1.06rem;
   color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .balance .pos {
   color: var(--income);
 }
 .balance .neg {
   color: var(--expense);
+}
+.balance-badge {
+  flex: 0 0 auto;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+.balance-badge.pos {
+  background: rgb(5 150 105 / 0.12);
+}
+.balance-badge.neg {
+  background: rgb(225 29 72 / 0.12);
 }
 .stat-card {
   padding: 0.85rem 1rem 1rem;

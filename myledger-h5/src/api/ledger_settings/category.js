@@ -14,6 +14,12 @@ export async function createCategory(body) {
   return data
 }
 
+export async function updateCategory(body) {
+  const data = await dbfoundPost('/ledger_settings/category.execute!update', body)
+  unwrapDbfound(data)
+  return data
+}
+
 export async function deleteCategory(body) {
   const data = await dbfoundPost('/ledger_settings/category.execute!delete', body)
   unwrapDbfound(data)

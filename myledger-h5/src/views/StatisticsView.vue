@@ -409,62 +409,66 @@ onMounted(load)
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   max-width: 100%;
+  padding-right: 0.75rem;
 }
 .matrix {
   width: max-content;
   min-width: 100%;
   border-collapse: separate;
   border-spacing: 0;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
 }
 .matrix th,
 .matrix td {
-  padding: 0.72rem 0.5rem;
-  border-bottom: 1px solid var(--line);
+  padding: 0 0.5rem;
+  border-bottom: none;
   vertical-align: middle;
 }
 .matrix thead th {
+  height: 3rem;
   font-weight: 700;
   color: var(--muted);
   white-space: nowrap;
   background: #f8fafc;
-  border-bottom: 1px solid rgb(15 23 42 / 0.08);
 }
 .matrix thead .corner {
   border-top-left-radius: 0;
-  vertical-align: bottom;
-  padding-bottom: 0.58rem;
+  vertical-align: middle;
 }
 .matrix .col-cat {
-  min-width: 4rem;
-  max-width: 7rem;
+  width: 5.25rem;
+  min-width: 5.25rem;
+  max-width: 5.25rem;
   text-align: right;
-  padding-left: 0.35rem;
-  padding-right: 0.35rem;
 }
 .cat-head {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.72rem;
+  font-size: 0.64rem;
   font-weight: 700;
   color: rgb(71 85 105);
   text-align: right;
 }
 .matrix .head-total {
+  width: 5.25rem;
+  min-width: 5.25rem;
   text-align: right;
-  font-size: 0.75rem;
-  color: rgb(51 65 85);
+  font-size: 0.64rem;
+  color: rgb(71 85 105);
 }
 
 .matrix .num {
+  width: 5.25rem;
+  min-width: 5.25rem;
+  height: 2.75rem;
   text-align: right;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.01em;
+  letter-spacing: 0;
 }
 .matrix .num.is-zero {
   color: rgb(148 163 184);
@@ -480,46 +484,39 @@ onMounted(load)
 }
 
 .matrix .total-col {
-  font-weight: 800;
-  border-left: 1px solid rgb(13 148 136 / 0.15);
-  background: #f0f9f8;
+  font-weight: 600;
 }
 .matrix tbody td.num:not(.total-col) {
   background: #fff;
 }
 .matrix tbody td.total-col {
-  background: #f0f9f8;
+  background: #fff;
 }
 .matrix tbody tr.zebra td.num:not(.total-col) {
+  background: #f1f5f9;
+}
+.matrix tbody tr.zebra td.total-col {
   background: #f1f5f9;
 }
 .matrix tbody tr.is-current-month-row td.num:not(.total-col) {
   background: #daf2ec;
 }
+.matrix tbody tr.is-current-month-row td.total-col {
+  background: #daf2ec;
+}
 .matrix tbody tr.is-current-month-row.zebra td.num:not(.total-col) {
-  background: #cfe9e2;
-}
-.matrix tbody tr:hover td.num:not(.total-col) {
-  background: #ecfdf5;
-}
-.matrix tbody tr.is-current-month-row:hover td.num:not(.total-col) {
-  background: #c5ebe3;
-}
-.matrix tbody tr.zebra td.total-col {
-  background: #e6f3f0;
-}
-.matrix tbody tr:hover td.total-col {
-  background: #d5ede8;
+  background: #daf2ec;
 }
 .sticky-col {
   position: sticky;
   left: 0;
   z-index: 2;
   text-align: left;
-  min-width: 5.75rem;
-  max-width: 7.5rem;
+  width: 5.25rem;
+  min-width: 5.25rem;
+  max-width: 5.25rem;
   background: var(--surface);
-  box-shadow: 6px 0 14px -4px rgb(15 23 42 / 0.12);
+  box-shadow: 6px 0 14px -4px rgb(15 23 42 / 0.1);
 }
 .matrix thead .sticky-col {
   z-index: 4;
@@ -535,20 +532,15 @@ onMounted(load)
   background: #daf2ec;
 }
 .matrix tbody tr.is-current-month-row.zebra .sticky-col {
-  background: #cfe9e2;
-}
-.matrix tbody tr:hover .sticky-col {
-  background: #ecfdf5;
-}
-.matrix tbody tr.is-current-month-row:hover .sticky-col {
-  background: #c5ebe3;
+  background: #daf2ec;
 }
 
 .row-month {
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: var(--text);
   font-variant-numeric: tabular-nums;
+  height: 2.75rem;
 }
 
 .matrix tfoot .sticky-col,
@@ -557,10 +549,9 @@ onMounted(load)
 }
 .foot-row th,
 .foot-row td {
-  border-top: 2px solid rgb(13 148 136 / 0.2);
+  height: 3.25rem;
+  border-top: none;
   background: #e6f4f2;
-  padding-top: 0.78rem;
-  padding-bottom: 0.78rem;
 }
 .foot-row .sticky-col {
   z-index: 3;
@@ -569,12 +560,13 @@ onMounted(load)
 }
 .foot-lbl {
   font-weight: 800;
-  font-size: 0.8rem;
+  font-size: 0.68rem;
   color: var(--text);
+  white-space: nowrap;
 }
 .foot-num {
   font-weight: 800;
-  font-size: 0.8rem;
+  font-size: 0.68rem;
 }
 
 .empty {
