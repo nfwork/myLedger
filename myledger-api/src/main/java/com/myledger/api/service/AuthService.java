@@ -16,7 +16,6 @@ import org.springframework.web.server.ResponseStatusException;
 import javax.servlet.http.HttpServletRequest;
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.HexFormat;
 
 @Service
 public class AuthService {
@@ -79,11 +78,15 @@ public class AuthService {
     }
 
     private static long parseRequestUserId(Object raw) {
-        if (raw instanceof Number n) {
+        if (raw instanceof Number) {
+            Number n = (Number) raw;
             return n.longValue();
         }
-        if (raw instanceof String s && !s.isBlank()) {
-            return Long.parseLong(s.trim());
+        if (raw instanceof String) {
+            String s = (String) raw;
+            if (!s.isBlank()) {
+                return Long.parseLong(s.trim());
+            }
         }
         throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "无效用户");
     }
@@ -121,6 +124,6 @@ public class AuthService {
     private static String newRefreshTokenRaw() {
         byte[] b = new byte[32];
         RANDOM.nextBytes(b);
-        return HexFormat.of().formatHex(b);
+        return JwtService.toHex(b);
     }
 }

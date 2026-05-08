@@ -14,13 +14,13 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Date;
-import java.util.HexFormat;
 import java.util.Optional;
 
 @Service
 public class JwtService {
 
     public static final String CLAIM_USERNAME = "username";
+    private static final char[] HEX_DIGITS = "0123456789abcdef".toCharArray();
 
     private final JwtSecurityProperties props;
     private final SecretKey key;
@@ -35,10 +35,20 @@ public class JwtService {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] digest = md.digest(raw.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest);
+            return toHex(digest);
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }
+    }
+
+    public static String toHex(byte[] bytes) {
+        char[] out = new char[bytes.length * 2];
+        for (int i = 0; i < bytes.length; i++) {
+            int v = bytes[i] & 0xff;
+            out[i * 2] = HEX_DIGITS[v >>> 4];
+            out[i * 2 + 1] = HEX_DIGITS[v & 0x0f];
+        }
+        return new String(out);
     }
 
     public String issueAccessToken(long userId, String username) {
@@ -82,6 +92,22 @@ public class JwtService {
         return props.getRefreshTokenTtlSeconds();
     }
 
-    public record JwtAccessPrincipal(long userId, String username) {
+    public static final class JwtAccessPrincipal {
+
+        private final long userId;
+        private final String username;
+
+        public JwtAccessPrincipal(long userId, String username) {
+            this.userId = userId;
+            this.username = username;
+        }
+
+        public long getUserId() {
+            return userId;
+        }
+
+        public String getUsername() {
+            return username;
+        }
     }
 }

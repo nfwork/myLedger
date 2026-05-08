@@ -68,8 +68,8 @@ public class BearerAuthFilter extends OncePerRequestFilter {
         }
 
         JwtService.JwtAccessPrincipal p = principal.get();
-        request.setAttribute(ATTR_USER_ID, p.userId());
-        request.setAttribute(ATTR_USERNAME, p.username() != null ? p.username() : "");
+        request.setAttribute(ATTR_USER_ID, p.getUserId());
+        request.setAttribute(ATTR_USERNAME, p.getUsername() != null ? p.getUsername() : "");
 
         filterChain.doFilter(request, response);
     }

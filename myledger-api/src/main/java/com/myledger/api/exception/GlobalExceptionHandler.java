@@ -98,8 +98,8 @@ public class GlobalExceptionHandler {
 
     private static Exception unwrapDbfoundPackage(DBFoundWrappedException exception) {
         Throwable cause = exception.getCause();
-        if (cause instanceof Exception e) {
-            return e;
+        if (cause instanceof Exception) {
+            return (Exception) cause;
         }
         return exception;
     }

@@ -6,7 +6,7 @@
 
 | 目录 | 说明 |
 | --- | --- |
-| [myledger-api/](myledger-api/) | 后端：**Spring Boot 3.2** + **dbfound**（`dbfound-spring-boot-starter`），MySQL；业务在 **`resources/model/`**（`user/`、`ledger_settings/`、`bookkeeping/`、`report/`） |
+| [myledger-api/](myledger-api/) | 后端：**Java 11** + **Spring Boot 2.7** + **dbfound**（`dbfound-spring-boot-starter`），MySQL；业务在 **`resources/model/`**（`user/`、`ledger_settings/`、`bookkeeping/`、`report/`） |
 | [myledger-h5/](myledger-h5/) | 前端：**Vue 3** + **Vite 2**；**`src/api/`** 与后端 model 目录对齐；dbfound 路径须写**完整字面量**（见 `.cursor/rules/myledger-h5-api-urls.mdc`） |
 | [myledger-android/](myledger-android/) | 客户端：**Kotlin** + **Jetpack Compose**；与 H5 共用 **`docs/api-http.md`** 契约；**`BuildConfig.API_BASE`** 与文档一致为 **`http://192.168.0.156:8080/`**（见 **`myledger-android/gradle.properties`** 的 **`MYLEDGER_API_BASE`**） |
 
@@ -14,7 +14,7 @@
 
 ## 技术栈（摘要）
 
-- **后端**：Java 17、Spring Boot、dbfound、MySQL。
+- **后端**：Java 11、Spring Boot 2.7、dbfound、MySQL。
 - **前端**：Vue 3、Vue Router、Axios；**Node** 版本以 **`myledger-h5/package.json`** 的 **`engines`** 为准（**Vite 2** 与低版本 Node 的约束见该目录说明）。
 
 ## 本地运行
