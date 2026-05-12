@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -40,7 +41,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -62,6 +66,7 @@ import com.myledger.app.ui.theme.Surface
 import com.myledger.app.ui.theme.TextPrimary
 import com.myledger.app.ui.theme.h5Card
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -87,6 +92,8 @@ fun AccountsScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var accountToDelete by remember { mutableStateOf<JsonObject?>(null) }
     val scope = rememberCoroutineScope()
+    val editNameFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     fun isDefault(a: JsonObject): Boolean {
         val v = a.get("is_default") ?: a.get("isDefault") ?: return false
@@ -109,9 +116,18 @@ fun AccountsScreen(
         }
     }
 
+    LaunchedEffect(editId) {
+        if (editId != null) {
+            delay(100)
+            editNameFocusRequester.requestFocus()
+            keyboardController?.show()
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .imePadding()
             .verticalScroll(rememberScrollState())
             .padding(ScreenPadding),
         verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -230,7 +246,7 @@ fun AccountsScreen(
                                 value = editName,
                                 onValueChange = { editName = it },
                                 placeholder = "账户名称",
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier.fillMaxWidth().focusRequester(editNameFocusRequester),
                             )
                             H5CompactInputField(
                                 value = editSort,

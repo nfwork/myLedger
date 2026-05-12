@@ -46,6 +46,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -108,6 +110,8 @@ fun EntryFormScreen(
     var showPostSaveChoice by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val formScroll = rememberScrollState()
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     fun isDefaultAccount(a: JsonObject): Boolean {
         val v = a.get("is_default") ?: a.get("isDefault") ?: return false
@@ -174,6 +178,11 @@ fun EntryFormScreen(
         amount = ""
         remark = ""
         err = null
+    }
+
+    fun clearInputFocus() {
+        focusManager.clearFocus(force = true)
+        keyboardController?.hide()
     }
 
     Column(
@@ -469,6 +478,7 @@ fun EntryFormScreen(
             dismissButton = {
                 TextButton(
                     onClick = {
+                        clearInputFocus()
                         showPostSaveChoice = false
                         onSuccess("已记账")
                         onDone()
