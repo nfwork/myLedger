@@ -2,9 +2,7 @@
   <div class="stats-page">
     <section class="hero card">
       <p class="hero-title">月 × 分类（自然年）</p>
-      <p class="hero-desc">
-        行为月份、列为分类；按<strong>自然年</strong>汇总，默认当前年。查看<strong>今年</strong>时只展示到<strong>本月</strong>，往年仍为全年 12 个月。切换类型查看支出或收入分布。
-      </p>
+      <p class="hero-desc">自然年汇总，今年截至本月。</p>
     </section>
 
     <div class="toolbar card">
@@ -38,7 +36,6 @@
       <div class="year-bar">
         <button type="button" class="nav-btn" @click="shiftYear(-1)" aria-label="上一年">‹</button>
         <div class="ym-block">
-          <span class="ym-label">统计区间</span>
           <span class="ym">{{ selectedYear }}年</span>
         </div>
         <button type="button" class="nav-btn" @click="shiftYear(1)" aria-label="下一年">›</button>
@@ -245,55 +242,59 @@ onMounted(load)
 .stats-page {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.85rem;
   max-width: 560px;
   margin: 0 auto;
 }
 
 .hero {
-  padding: 1rem 1.1rem 1.05rem;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.95rem;
   border: 1px solid rgb(13 148 136 / 0.12);
   background: linear-gradient(145deg, rgb(255 255 255 / 0.95), rgb(240 253 250 / 0.9));
 }
 .hero-title {
-  margin: 0 0 0.35rem;
-  font-size: 1rem;
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: 0.95rem;
   font-weight: 800;
   letter-spacing: 0.02em;
   color: var(--primary-dark);
 }
 .hero-desc {
+  min-width: 0;
   margin: 0;
-  font-size: 0.8rem;
-  line-height: 1.55;
+  font-size: 0.74rem;
+  line-height: 1.4;
   color: var(--muted);
-}
-.hero-desc strong {
-  color: var(--text);
-  font-weight: 700;
+  text-align: right;
 }
 
 .toolbar {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.75rem 0.85rem 0.85rem;
+  gap: 0.62rem;
+  padding: 0.62rem 0.85rem;
 }
 .scope-row {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.5rem;
 }
 .scope-lbl {
   flex: 0 0 auto;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 800;
   color: var(--muted);
 }
 .scope-select {
   flex: 1;
   min-width: 0;
-  padding: 0.52rem 2rem 0.52rem 0.65rem;
+  height: 2.3rem;
+  padding: 0 2rem 0 0.65rem;
   border-radius: 12px;
   border: 1px solid var(--line);
   font-weight: 600;
@@ -309,16 +310,17 @@ onMounted(load)
 .type-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  padding: 0.25rem;
-  gap: 0.25rem;
-  border-radius: 14px;
+  min-width: 0;
+  padding: 0.24rem;
+  gap: 0.24rem;
+  border-radius: 13px;
   background: rgb(15 23 42 / 0.05);
 }
 .type-tabs button {
   border: none;
-  border-radius: 11px;
-  padding: 0.55rem 0.5rem;
-  font-size: 0.88rem;
+  border-radius: 10px;
+  padding: 0.5rem 0.4rem;
+  font-size: 0.86rem;
   font-weight: 800;
   color: var(--muted);
   background: transparent;
@@ -335,36 +337,30 @@ onMounted(load)
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0 0.05rem;
 }
 .ym-block {
   flex: 1;
   text-align: center;
   min-width: 0;
 }
-.ym-label {
-  display: block;
-  font-size: 0.68rem;
-  font-weight: 600;
-  color: var(--muted);
-  letter-spacing: 0.02em;
-  margin-bottom: 0.12rem;
-}
 .ym {
   font-weight: 800;
-  font-size: 1.02rem;
+  font-size: 0.98rem;
   letter-spacing: 0.03em;
   color: var(--text);
 }
 .nav-btn {
   flex-shrink: 0;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.3rem;
+  height: 2.3rem;
   border: none;
-  border-radius: 12px;
+  border-radius: 11px;
   background: rgb(13 148 136 / 0.1);
   color: var(--primary-dark);
-  font-size: 1.35rem;
+  font-size: 1.2rem;
   line-height: 1;
   cursor: pointer;
   transition: background 0.15s ease;
@@ -404,6 +400,7 @@ onMounted(load)
 .table-shell {
   padding: 0;
   overflow: hidden;
+  background: #fff;
 }
 .scroll-x {
   overflow-x: auto;
@@ -515,18 +512,24 @@ onMounted(load)
   width: 5.25rem;
   min-width: 5.25rem;
   max-width: 5.25rem;
-  background: var(--surface);
-  box-shadow: 6px 0 14px -4px rgb(15 23 42 / 0.1);
+  background: #fff;
+  border-right: 1px solid rgb(13 148 136 / 0.1);
+  box-shadow: none;
+}
+.matrix .sticky-col {
+  padding-left: 0.625rem;
+  padding-right: 0.625rem;
 }
 .matrix thead .sticky-col {
   z-index: 4;
   background: #f8fafc;
+  color: var(--muted);
 }
 .matrix tbody tr.zebra .sticky-col {
   background: #f1f5f9;
 }
 .matrix tbody tr:not(.zebra) .sticky-col {
-  background: var(--surface);
+  background: #fff;
 }
 .matrix tbody tr.is-current-month-row .sticky-col {
   background: #daf2ec;
@@ -556,7 +559,7 @@ onMounted(load)
 .foot-row .sticky-col {
   z-index: 3;
   background: #e6f4f2;
-  box-shadow: 6px 0 14px -4px rgb(15 23 42 / 0.1);
+  box-shadow: none;
 }
 .foot-lbl {
   font-weight: 800;

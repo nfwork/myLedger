@@ -7,14 +7,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
@@ -24,14 +22,12 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,7 +40,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -63,7 +58,6 @@ import com.myledger.app.domain.formatDateDisplay
 import com.myledger.app.domain.formatMoney
 import com.myledger.app.domain.formatYearMonthLabel
 import com.myledger.app.domain.shiftYearMonth
-import com.myledger.app.ui.theme.CompactSelectFieldTextStyle
 import com.myledger.app.ui.theme.CompactSelectMenuItemMinHeight
 import com.myledger.app.ui.theme.CompactSelectMenuItemPadding
 import com.myledger.app.ui.theme.CompactSelectMenuItemTextStyle
@@ -78,7 +72,6 @@ import com.myledger.app.ui.theme.Line
 import com.myledger.app.ui.theme.Muted
 import com.myledger.app.ui.theme.Primary
 import com.myledger.app.ui.theme.PrimaryDark
-import com.myledger.app.ui.theme.ScreenPadding
 import com.myledger.app.ui.theme.TextPrimary
 import com.myledger.app.ui.theme.h5Card
 import com.myledger.app.ui.theme.H5ExposedDropdownMenu
@@ -120,6 +113,7 @@ fun EntriesScreen(
     var accounts by remember { mutableStateOf<List<Pair<Long, String>>>(emptyList()) }
     var remarkKeyword by remember { mutableStateOf("") }
     var debouncedRemark by remember { mutableStateOf("") }
+    var searchAllMonths by remember { mutableStateOf(false) }
     var rows by remember { mutableStateOf<List<JsonObject>>(emptyList()) }
     var total by remember { mutableStateOf(0) }
     var loading by remember { mutableStateOf(true) }
@@ -144,22 +138,22 @@ fun EntriesScreen(
         }
     }
 
-    LaunchedEffect(yearMonth, entryType, scopeAccountId, debouncedRemark) {
+    fun queryBody(start: Int) = buildMap<String, Any> {
+        val kw = debouncedRemark
+        if (!searchAllMonths) put("year_month", yearMonth)
+        put("start", start)
+        put("limit", PAGE_SIZE)
+        if (entryType.isNotBlank()) put("entry_type", entryType)
+        if (kw.isNotBlank()) put("remark_keyword", kw)
+        val aid = scopeAccountId
+        if (aid != null) put("account_id", aid)
+    }
+
+    LaunchedEffect(yearMonth, entryType, scopeAccountId, debouncedRemark, searchAllMonths) {
         loading = true
         try {
-            val aid = scopeAccountId
             val (arr, n) = withContext(Dispatchers.IO) {
-                AppServices.ledgerRepository.entryListPage(
-                    buildMap {
-                        put("year_month", yearMonth)
-                        put("start", 0)
-                        put("limit", PAGE_SIZE)
-                        if (entryType.isNotBlank()) put("entry_type", entryType)
-                        val kw = debouncedRemark
-                        if (kw.isNotBlank()) put("remark_keyword", kw)
-                        if (aid != null) put("account_id", aid)
-                    },
-                )
+                AppServices.ledgerRepository.entryListPage(queryBody(0))
             }
             rows = arr.mapJsonObjects()
             total = n
@@ -172,282 +166,241 @@ fun EntriesScreen(
         }
     }
 
-    fun queryBody(start: Int) = buildMap<String, Any> {
-        put("year_month", yearMonth)
-        put("start", start)
-        put("limit", PAGE_SIZE)
-        if (entryType.isNotBlank()) put("entry_type", entryType)
-        val kw = debouncedRemark
-        if (kw.isNotBlank()) put("remark_keyword", kw)
-        val aid = scopeAccountId
-        if (aid != null) put("account_id", aid)
-    }
     val groupedRows = remember(rows) { rows.toEntryDayGroups() }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        // 顶部“筛选区”：使用极浅的主题背景色，与 TopBar 衔接
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Primary.copy(alpha = 0.04f))
-                .padding(start = 16.dp, top = 10.dp, end = 16.dp, bottom = 8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // 月份选择器
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .h5Card()
-                    .padding(vertical = 4.dp, horizontal = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
-                Button(
-                    onClick = { yearMonth = shiftYearMonth(yearMonth, -1) },
-                    modifier = Modifier.size(40.dp),
-                    contentPadding = PaddingValues(0.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary.copy(alpha = 0.08f), contentColor = PrimaryDark),
-                    shape = RoundedCornerShape(10.dp)
+    LazyColumn(
+        modifier = Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 10.dp, bottom = 24.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        item(key = "filters") {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .h5Card()
+                        .padding(vertical = 4.dp, horizontal = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "上一月", modifier = Modifier.size(20.dp))
-                }
-                Text(formatYearMonthLabel(yearMonth), fontWeight = FontWeight.Black, fontSize = 17.sp, color = PrimaryDark)
-                Button(
-                    onClick = { yearMonth = shiftYearMonth(yearMonth, 1) },
-                    modifier = Modifier.size(40.dp),
-                    contentPadding = PaddingValues(0.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary.copy(alpha = 0.08f), contentColor = PrimaryDark),
-                    shape = RoundedCornerShape(10.dp)
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "下一月", modifier = Modifier.size(20.dp))
-                }
-            }
-
-            // 综合筛选卡片
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .h5Card()
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("类型", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 8.dp))
-                    ExposedDropdownMenuBox(expanded = typeMenu, onExpandedChange = { typeMenu = it }, modifier = Modifier.weight(1f)) {
-                        val typeLabel = when (entryType) {
-                            "income" -> "收入"
-                            "expense" -> "支出"
-                            else -> "全部"
-                        }
-                        H5CompactSelectField(
-                            value = typeLabel,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeMenu) },
-                            modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    Button(
+                        onClick = { yearMonth = shiftYearMonth(yearMonth, -1) },
+                        enabled = !searchAllMonths,
+                        modifier = Modifier.size(40.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Primary.copy(alpha = 0.08f),
+                            contentColor = PrimaryDark,
+                            disabledContainerColor = Primary.copy(alpha = 0.04f),
+                            disabledContentColor = Muted.copy(alpha = 0.45f),
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, contentDescription = "上一月", modifier = Modifier.size(20.dp))
+                    }
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        SearchRangeButton(
+                            text = formatYearMonthLabel(yearMonth),
+                            selected = !searchAllMonths,
+                            onClick = { searchAllMonths = false },
+                            modifier = Modifier.weight(1f),
                         )
-                        H5ExposedDropdownMenu(
-                            expanded = typeMenu,
-                            onDismissRequest = { typeMenu = false },
-                            maxHeight = EntriesFilterDropdownMaxHeight,
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("全部", style = CompactSelectMenuItemTextStyle) },
-                                onClick = { entryType = ""; typeMenu = false },
-                                contentPadding = CompactSelectMenuItemPadding,
-                                modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
-                            )
-                            DropdownMenuItem(
-                                text = { Text("收入", style = CompactSelectMenuItemTextStyle) },
-                                onClick = { entryType = "income"; typeMenu = false },
-                                contentPadding = CompactSelectMenuItemPadding,
-                                modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
-                            )
-                            DropdownMenuItem(
-                                text = { Text("支出", style = CompactSelectMenuItemTextStyle) },
-                                onClick = { entryType = "expense"; typeMenu = false },
-                                contentPadding = CompactSelectMenuItemPadding,
-                                modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
-                            )
-                        }
+                        SearchRangeButton(
+                            text = "全部",
+                            selected = searchAllMonths,
+                            onClick = { searchAllMonths = true },
+                            modifier = Modifier.weight(0.72f),
+                        )
+                    }
+                    Button(
+                        onClick = { yearMonth = shiftYearMonth(yearMonth, 1) },
+                        enabled = !searchAllMonths,
+                        modifier = Modifier.size(40.dp),
+                        contentPadding = PaddingValues(0.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Primary.copy(alpha = 0.08f),
+                            contentColor = PrimaryDark,
+                            disabledContainerColor = Primary.copy(alpha = 0.04f),
+                            disabledContentColor = Muted.copy(alpha = 0.45f),
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "下一月", modifier = Modifier.size(20.dp))
                     }
                 }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("账户", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 8.dp))
-                    ExposedDropdownMenuBox(expanded = accMenu, onExpandedChange = { accMenu = it }, modifier = Modifier.weight(1f)) {
-                        H5CompactSelectField(
-                            value = if (scopeAccountId == null) "全部" else accounts.find { it.first == scopeAccountId }?.second ?: "全部",
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = accMenu) },
-                            modifier = Modifier.menuAnchor().fillMaxWidth(),
-                        )
-                        H5ExposedDropdownMenu(
-                            expanded = accMenu,
-                            onDismissRequest = { accMenu = false },
-                            maxHeight = EntriesFilterDropdownMaxHeight,
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text("全部", style = CompactSelectMenuItemTextStyle) },
-                                onClick = {
-                                    scopeAccountId = null
-                                    AppServices.accountScopeStore.setScopeAccountId(null)
-                                    accMenu = false
-                                },
-                                contentPadding = CompactSelectMenuItemPadding,
-                                modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .h5Card()
+                        .padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("类型", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 8.dp))
+                        ExposedDropdownMenuBox(expanded = typeMenu, onExpandedChange = { typeMenu = it }, modifier = Modifier.weight(1f)) {
+                            val typeLabel = when (entryType) {
+                                "income" -> "收入"
+                                "expense" -> "支出"
+                                else -> "全部"
+                            }
+                            H5CompactSelectField(
+                                value = typeLabel,
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = typeMenu) },
+                                modifier = Modifier.menuAnchor().fillMaxWidth(),
                             )
-                            accounts.forEach { (id, name) ->
+                            H5ExposedDropdownMenu(
+                                expanded = typeMenu,
+                                onDismissRequest = { typeMenu = false },
+                                maxHeight = EntriesFilterDropdownMaxHeight,
+                            ) {
                                 DropdownMenuItem(
-                                    text = { Text(name, style = CompactSelectMenuItemTextStyle) },
-                                    onClick = {
-                                        scopeAccountId = id
-                                        AppServices.accountScopeStore.setScopeAccountId(id)
-                                        accMenu = false
-                                    },
+                                    text = { Text("全部", style = CompactSelectMenuItemTextStyle) },
+                                    onClick = { entryType = ""; typeMenu = false },
+                                    contentPadding = CompactSelectMenuItemPadding,
+                                    modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("收入", style = CompactSelectMenuItemTextStyle) },
+                                    onClick = { entryType = "income"; typeMenu = false },
+                                    contentPadding = CompactSelectMenuItemPadding,
+                                    modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("支出", style = CompactSelectMenuItemTextStyle) },
+                                    onClick = { entryType = "expense"; typeMenu = false },
                                     contentPadding = CompactSelectMenuItemPadding,
                                     modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
                                 )
                             }
                         }
                     }
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("备注", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 8.dp))
-                    H5CompactInputField(
-                        value = remarkKeyword,
-                        onValueChange = { remarkKeyword = it },
-                        placeholder = "输入关键词搜索…",
-                        modifier = Modifier.weight(1f),
-                        shape = H5EntriesRemarkFieldShape,
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.Search,
-                                contentDescription = null,
-                                modifier = Modifier.size(16.dp),
-                                tint = Muted.copy(alpha = 0.6f),
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("账户", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 8.dp))
+                        ExposedDropdownMenuBox(expanded = accMenu, onExpandedChange = { accMenu = it }, modifier = Modifier.weight(1f)) {
+                            H5CompactSelectField(
+                                value = if (scopeAccountId == null) "全部" else accounts.find { it.first == scopeAccountId }?.second ?: "全部",
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = accMenu) },
+                                modifier = Modifier.menuAnchor().fillMaxWidth(),
                             )
-                        },
-                        trailingIcon = if (remarkKeyword.isNotEmpty()) {
-                            {
-                                IconButton(
-                                    onClick = { remarkKeyword = "" },
-                                    modifier = Modifier.size(32.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Filled.Close,
-                                        contentDescription = "清空",
-                                        modifier = Modifier.size(14.dp),
-                                        tint = Muted,
+                            H5ExposedDropdownMenu(
+                                expanded = accMenu,
+                                onDismissRequest = { accMenu = false },
+                                maxHeight = EntriesFilterDropdownMaxHeight,
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("全部", style = CompactSelectMenuItemTextStyle) },
+                                    onClick = {
+                                        scopeAccountId = null
+                                        AppServices.accountScopeStore.setScopeAccountId(null)
+                                        accMenu = false
+                                    },
+                                    contentPadding = CompactSelectMenuItemPadding,
+                                    modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
+                                )
+                                accounts.forEach { (id, name) ->
+                                    DropdownMenuItem(
+                                        text = { Text(name, style = CompactSelectMenuItemTextStyle) },
+                                        onClick = {
+                                            scopeAccountId = id
+                                            AppServices.accountScopeStore.setScopeAccountId(id)
+                                            accMenu = false
+                                        },
+                                        contentPadding = CompactSelectMenuItemPadding,
+                                        modifier = Modifier.heightIn(min = CompactSelectMenuItemMinHeight)
                                     )
                                 }
                             }
-                        } else null
-                    )
+                        }
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("备注", color = Muted, fontSize = 12.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(end = 8.dp))
+                        H5CompactInputField(
+                            value = remarkKeyword,
+                            onValueChange = { remarkKeyword = it },
+                            placeholder = if (searchAllMonths) "输入关键词搜索全部流水…" else "输入关键词搜索当月…",
+                            modifier = Modifier.weight(1f),
+                            shape = H5EntriesRemarkFieldShape,
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Filled.Search,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = Muted.copy(alpha = 0.6f),
+                                )
+                            },
+                            trailingIcon = if (remarkKeyword.isNotEmpty()) {
+                                {
+                                    IconButton(
+                                        onClick = { remarkKeyword = "" },
+                                        modifier = Modifier.size(32.dp),
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.Close,
+                                            contentDescription = "清空",
+                                            modifier = Modifier.size(14.dp),
+                                            tint = Muted,
+                                        )
+                                    }
+                                }
+                            } else null
+                        )
+                    }
                 }
             }
         }
 
-        // 列表区
-        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                if (loading) {
-                    item {
-                        Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                        }
-                    }
-                } else if (rows.isEmpty()) {
-                    item {
-                        Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
-                            Text("暂无流水", color = Muted, fontSize = 15.sp)
-                        }
-                    }
-                } else {
-                    groupedRows.forEach { group ->
-                        item(key = "group-${group.dateKey}") {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .h5Card()
-                            ) {
-                                // 分组标题
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .background(Color(0xFF0F172A).copy(alpha = 0.02f))
-                                        .padding(horizontal = 14.dp, vertical = 8.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(group.dateLabel, fontWeight = FontWeight.Black, fontSize = 14.sp, color = TextPrimary)
-                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                        group.incomeText?.let { incomeText ->
-                                            Text(incomeText, color = Income, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                                        }
-                                        group.expenseText?.let { expenseText ->
-                                            Text(expenseText, color = Expense, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
-                                        }
-                                    }
+        if (loading) {
+            item {
+                Box(Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                }
+            }
+        } else if (rows.isEmpty()) {
+            item {
+                Box(Modifier.fillMaxWidth().padding(48.dp), contentAlignment = Alignment.Center) {
+                    Text("暂无流水", color = Muted, fontSize = 15.sp)
+                }
+            }
+        } else {
+            groupedRows.forEach { group ->
+                item(key = "group-${group.dateKey}") {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .h5Card()
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color(0xFF0F172A).copy(alpha = 0.02f))
+                                .padding(horizontal = 14.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(group.dateLabel, fontWeight = FontWeight.Black, fontSize = 14.sp, color = TextPrimary)
+                            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                group.incomeText?.let { incomeText ->
+                                    Text(incomeText, color = Income, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                                 }
-
-                                group.rows.forEachIndexed { idx, row ->
-                                    EntryListRow(row, onClick = { onOpenEntry(row.id) })
-                                    if (idx < group.rows.lastIndex) {
-                                        HorizontalDivider(
-                                            modifier = Modifier.padding(horizontal = 16.dp),
-                                            thickness = 0.5.dp,
-                                            color = Line.copy(alpha = 0.2f)
-                                        )
-                                    }
+                                group.expenseText?.let { expenseText ->
+                                    Text(expenseText, color = Expense, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
                                 }
                             }
                         }
-                    }
 
-                    if (total > 0) {
-                        item {
-                            if (rows.size < total) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clip(RoundedCornerShape(12.dp))
-                                        .clickable(enabled = !loadingMore) {
-                                            loadingMore = true
-                                            scope.launch {
-                                                try {
-                                                    val (arr, n) = withContext(Dispatchers.IO) {
-                                                        AppServices.ledgerRepository.entryListPage(queryBody(rows.size))
-                                                    }
-                                                    rows = rows + arr.mapJsonObjects()
-                                                    total = n
-                                                } catch (e: Exception) {
-                                                    onError(e.message ?: "加载更多失败")
-                                                } finally {
-                                                    loadingMore = false
-                                                }
-                                            }
-                                        }
-                                        .padding(vertical = 14.dp),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    if (loadingMore) {
-                                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Primary)
-                                        Text(" 加载中…", color = Primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                    } else {
-                                        Text("查看更多 (已加载 ${rows.size}/$total)", color = Primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                                    }
-                                }
-                            } else {
-                                Text(
-                                    "已显示全部 $total 条流水",
-                                    color = Muted,
-                                    fontSize = 11.sp,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 16.dp),
-                                    textAlign = TextAlign.Center
+                        group.rows.forEachIndexed { idx, row ->
+                            EntryListRow(row, onClick = { onOpenEntry(row.id) })
+                            if (idx < group.rows.lastIndex) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                    thickness = 0.5.dp,
+                                    color = Line.copy(alpha = 0.2f)
                                 )
                             }
                         }
@@ -455,18 +408,81 @@ fun EntriesScreen(
                 }
             }
 
-            // 顶部半透明过渡：遮挡列表滚入顶部的硬边界
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(20.dp)
-                    .background(
-                        Brush.verticalGradient(
-                            listOf(Primary.copy(alpha = 0.04f), Color.Transparent)
+            if (total > 0) {
+                item {
+                    if (rows.size < total) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp))
+                                .clickable(enabled = !loadingMore) {
+                                    loadingMore = true
+                                    scope.launch {
+                                        try {
+                                            val (arr, n) = withContext(Dispatchers.IO) {
+                                                AppServices.ledgerRepository.entryListPage(queryBody(rows.size))
+                                            }
+                                            rows = rows + arr.mapJsonObjects()
+                                            total = n
+                                        } catch (e: Exception) {
+                                            onError(e.message ?: "加载更多失败")
+                                        } finally {
+                                            loadingMore = false
+                                        }
+                                    }
+                                }
+                                .padding(vertical = 14.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (loadingMore) {
+                                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp, color = Primary)
+                                Text(" 加载中…", color = Primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            } else {
+                                Text("查看更多 (已加载 ${rows.size}/$total)", color = Primary, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    } else {
+                        Text(
+                            "已显示全部 $total 条流水",
+                            color = Muted,
+                            fontSize = 11.sp,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 16.dp),
+                            textAlign = TextAlign.Center
                         )
-                    )
-            )
+                    }
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun SearchRangeButton(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .height(34.dp)
+            .clip(H5EntriesFilterSelectShape)
+            .background(if (selected) Primary.copy(alpha = 0.12f) else Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            color = if (selected) PrimaryDark else Muted,
+            fontSize = 13.sp,
+            fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

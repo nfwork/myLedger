@@ -1,9 +1,26 @@
 <template>
   <div class="entries">
     <section class="month-bar card">
-      <button type="button" class="nav-btn" @click="shift(-1)">‹</button>
-      <div class="ym">{{ yearMonth }}</div>
-      <button type="button" class="nav-btn" @click="shift(1)">›</button>
+      <button type="button" class="nav-btn" :disabled="searchAllMonths" @click="shift(-1)">‹</button>
+      <div class="range-switch" aria-label="流水查询范围">
+        <button
+          type="button"
+          class="range-btn"
+          :class="{ on: !searchAllMonths }"
+          @click="searchAllMonths = false"
+        >
+          {{ yearMonth }}
+        </button>
+        <button
+          type="button"
+          class="range-btn all"
+          :class="{ on: searchAllMonths }"
+          @click="searchAllMonths = true"
+        >
+          全部
+        </button>
+      </div>
+      <button type="button" class="nav-btn" :disabled="searchAllMonths" @click="shift(1)">›</button>
     </section>
 
     <div class="filters card">
@@ -46,7 +63,7 @@
                   type="search"
                   enterkeyhint="search"
                   maxlength="128"
-                  placeholder="搜索备注…"
+                  :placeholder="searchAllMonths ? '搜索全部流水备注…' : '搜索当月备注…'"
                   autocomplete="off"
                   aria-labelledby="lbl-remark"
                 />
@@ -69,7 +86,6 @@
               </div>
             </div>
           </div>
-          <p class="search-caption">仅在当前月份流水中，对备注做模糊匹配</p>
         </div>
       </div>
     </div>
@@ -106,8 +122,7 @@
         <li v-if="!rows.length" class="empty card">暂无流水</li>
       </ul>
 
-      <div v-if="total > 0" class="load-footer card" aria-label="加载更多">
-        <p class="load-count">已显示 {{ rows.length }} / {{ total }} 条</p>
+      <div v-if="total > 0" class="load-footer" aria-label="加载更多">
         <button
           v-if="hasMore"
           type="button"
@@ -115,9 +130,10 @@
           :disabled="loadingMore"
           @click="loadMore"
         >
-          {{ loadingMore ? '加载中…' : '加载更多' }}
+          <span v-if="loadingMore" class="load-spinner" aria-hidden="true"></span>
+          {{ loadingMore ? '加载中…' : `查看更多 (已加载 ${rows.length}/${total})` }}
         </button>
-        <p v-else class="load-end">已加载全部</p>
+        <p v-else class="load-end">已显示全部 {{ total }} 条流水</p>
       </div>
     </template>
   </div>
@@ -142,6 +158,7 @@ const toast = useToast()
 const yearMonth = ref(currentYearMonth())
 const entryType = ref('')
 const remarkKeyword = ref('')
+const searchAllMonths = ref(false)
 const total = ref(0)
 const loading = ref(true)
 const loadingMore = ref(false)
@@ -185,6 +202,7 @@ const groupedRows = computed(() => {
 })
 
 function shift(d) {
+  if (searchAllMonths.value) return
   yearMonth.value = shiftYearMonth(yearMonth.value, d)
 }
 
@@ -198,10 +216,10 @@ function rowSub(row) {
 
 function listQueryBody(start) {
   const body = {
-    year_month: yearMonth.value,
     start,
     limit: PAGE_SIZE,
   }
+  if (!searchAllMonths.value) body.year_month = yearMonth.value
   if (entryType.value) body.entry_type = entryType.value
   const kw = remarkKeyword.value.trim()
   if (kw) body.remark_keyword = kw
@@ -239,7 +257,7 @@ async function loadMore() {
   }
 }
 
-watch([yearMonth, entryType, scopeAccountId], load)
+watch([yearMonth, entryType, scopeAccountId, searchAllMonths], load)
 watch(remarkKeyword, () => {
   if (remarkSearchTimer) clearTimeout(remarkSearchTimer)
   remarkSearchTimer = setTimeout(() => {
@@ -254,15 +272,17 @@ onMounted(load)
 .entries {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 0.75rem;
 }
 .month-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.65rem 0.5rem;
+  padding: 0.25rem 0.5rem;
+  gap: 0.5rem;
 }
 .nav-btn {
+  flex: 0 0 auto;
   width: 2.5rem;
   height: 2.5rem;
   border: none;
@@ -272,23 +292,54 @@ onMounted(load)
   font-size: 1.35rem;
   cursor: pointer;
 }
-.ym {
-  font-weight: 800;
-  letter-spacing: 0.04em;
+.nav-btn:disabled {
+  cursor: not-allowed;
+  color: rgb(100 116 139 / 0.45);
+  background: rgb(13 148 136 / 0.05);
+}
+.range-switch {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: 0.45rem;
+  padding: 0 0.1rem;
+}
+.range-btn {
+  flex: 1;
+  min-width: 0;
+  height: 2.15rem;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 750;
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.range-btn.all {
+  flex: 0.72;
+}
+.range-btn.on {
+  background: rgb(13 148 136 / 0.12);
+  color: var(--primary-dark);
+  font-weight: 850;
 }
 .filters {
-  padding: 0.85rem 1rem 0.95rem;
+  padding: 0.5rem 0.875rem;
 }
 .filter-toolbar {
-  --filter-label-w: 2.35rem;
-  --filter-row-gap: 0.65rem;
+  --filter-label-w: 2rem;
+  --filter-row-gap: 0.5rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 .filter-row {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   gap: var(--filter-row-gap);
 }
 .filter-select-wrap {
@@ -299,7 +350,6 @@ onMounted(load)
 .remark-filter {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
 }
 .search-field {
   flex: 1;
@@ -311,9 +361,8 @@ onMounted(load)
 .filter-lbl {
   flex: 0 0 var(--filter-label-w);
   align-self: center;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 800;
-  letter-spacing: 0.03em;
   color: var(--muted);
 }
 .filter-select {
@@ -322,13 +371,14 @@ onMounted(load)
   width: 100%;
   max-width: 100%;
   min-width: 0;
+  height: 2.15rem;
   margin: 0;
-  padding: 0.55rem 2.15rem 0.55rem 0.7rem;
+  padding: 0 2rem 0 0.7rem;
   border-radius: 12px;
   border: 1px solid var(--line);
   color: var(--text);
   font-weight: 600;
-  font-size: 1rem;
+  font-size: 0.88rem;
   line-height: 1.35;
   outline: none;
   -webkit-appearance: none;
@@ -350,10 +400,11 @@ onMounted(load)
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  border-radius: 14px;
+  min-height: 2.15rem;
+  border-radius: 12px;
   border: 1px solid var(--line);
   background: linear-gradient(180deg, #fff 0%, var(--bg) 100%);
-  padding: 0.2rem 0.45rem 0.2rem 0.65rem;
+  padding: 0 0.35rem 0 0.6rem;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 .search-shell:focus-within {
@@ -370,8 +421,8 @@ onMounted(load)
   min-width: 0;
   border: none;
   background: transparent;
-  padding: 0.52rem 0.25rem;
-  font-size: 0.92rem;
+  padding: 0.45rem 0.25rem;
+  font-size: 0.88rem;
   font-weight: 500;
   color: var(--text);
   outline: none;
@@ -390,8 +441,8 @@ onMounted(load)
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2rem;
-  height: 2rem;
+  width: 1.8rem;
+  height: 1.8rem;
   margin: 0 -0.1rem 0 0;
   border: none;
   border-radius: 11px;
@@ -403,14 +454,6 @@ onMounted(load)
 .search-clear:active {
   background: rgb(15 23 42 / 0.1);
   color: var(--text);
-}
-.search-caption {
-  margin: 0;
-  padding: 0 0 0 calc(var(--filter-label-w) + var(--filter-row-gap));
-  font-size: 0.72rem;
-  line-height: 1.4;
-  color: var(--muted);
-  font-weight: 500;
 }
 .muted {
   color: var(--muted);
@@ -527,27 +570,23 @@ onMounted(load)
 }
 .load-footer {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.55rem;
-  padding: 0.75rem 1rem 0.85rem;
-  margin-top: 0.15rem;
-}
-.load-count {
-  margin: 0;
-  text-align: center;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--muted);
+  justify-content: center;
+  align-items: center;
+  padding: 0.15rem 0 0.35rem;
 }
 .load-more-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
   width: 100%;
-  padding: 0.62rem 1rem;
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
   border-radius: 12px;
-  border: 1px solid rgb(13 148 136 / 0.35);
-  background: rgb(13 148 136 / 0.08);
-  color: var(--primary-dark);
-  font-size: 0.92rem;
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.82rem;
   font-weight: 800;
   cursor: pointer;
   transition: background 0.15s ease, opacity 0.15s ease;
@@ -557,13 +596,28 @@ onMounted(load)
   cursor: not-allowed;
 }
 .load-more-btn:not(:disabled):active {
-  background: rgb(13 148 136 / 0.16);
+  background: rgb(13 148 136 / 0.06);
+}
+.load-spinner {
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 2px solid rgb(13 148 136 / 0.22);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
 }
 .load-end {
   margin: 0;
+  width: 100%;
+  padding: 1rem 0;
   text-align: center;
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 600;
   color: var(--muted);
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>
