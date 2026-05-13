@@ -16,11 +16,16 @@ spring:
     active: '@spring.profiles.active@'
 
 dbfound:
-  # JWT 鉴权，不再用 HttpSession；关闭 dbfound 对 session 的读写（见 DBFoundConfigProperties.WebConfig#openSession）
+  datasource:
+    db0:
+      url: jdbc:mysql://127.0.0.1:8306/myledger?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+      username: dbfound
+      password: dbfound
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      dialect: MySqlDialect
   web:
-    open-session: false
-    # 非空即启用 dbfound Model HTTP 白名单；未列出的 *.query / *.execute 会返回 403。
-    api-allow-urls:
+    open-session: false  # JWT 鉴权，不再用 HttpSession；
+    api-allow-urls:   # 非空即启用 dbfound Model HTTP 白名单；未列出的 *.query / *.execute 会返回 403。
       - "/user/user.query!getById"
       - "/user/user.execute!register"
       - "/user/user.execute!updateProfile"
@@ -44,10 +49,3 @@ dbfound:
       - "/report/summary.query!byCategory"
       - "/report/summary.query!matrixByMonthCategory"
       - "/report/summary.query!byDay"
-  datasource:
-    db0:
-      url: jdbc:mysql://127.0.0.1:8306/myledger?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-      username: dbfound
-      password: dbfound
-      driver-class-name: com.mysql.cj.jdbc.Driver
-      dialect: MySqlDialect
